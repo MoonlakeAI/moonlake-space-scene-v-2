@@ -1,4 +1,4 @@
-extends Node3D
+extends Node2D
 
 ## Main scene controller
 ## Wires up the console panel to the spaceship traffic

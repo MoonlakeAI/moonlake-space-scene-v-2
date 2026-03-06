@@ -22,6 +22,7 @@ enabled=PackedStringArray("res://addons/moonlake_copilot/plugin.cfg", "res://add
 [moonlake]
 
 general/project_type="3d"
+ui/chat_input_height=216.0
 
 [physics]
 

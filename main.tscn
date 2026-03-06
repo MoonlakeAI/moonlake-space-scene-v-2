@@ -5,24 +5,50 @@
 [ext_resource type="Script" uid="uid://dt1mh1uigxsyr" path="res://scripts/main.gd" id="3_main"]
 [ext_resource type="Script" uid="uid://k1h7njup64h8" path="res://scripts/console_panel.gd" id="4_console"]
 [ext_resource type="PackedScene" path="res://scenes/space_background.tscn" id="5_background"]
+[ext_resource type="Texture2D" uid="uid://lgjaqrnpuytw" path="res://assets/images/earth_texture.png" id="6_earth_tex"]
+[ext_resource type="Script" uid="uid://dluq5rn16f030" path="res://scripts/planet_rotation.gd" id="7_planet_script"]
+[ext_resource type="Texture2D" uid="uid://b4gcv71lo4dqs" path="res://assets/images/earth_clouds.jpg" id="8_clouds_tex"]
+[ext_resource type="Shader" uid="uid://bqkxgyewu3hho" path="res://shaders/earth_planet.gdshader" id="9_earth_shader"]
+[ext_resource type="Shader" uid="uid://ck8jmf61hiaev" path="res://shaders/atmosphere.gdshader" id="10_atmo_shader"]
 
-[sub_resource type="Environment" id="Environment_space"]
+[sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
+background_color = Color(0, 0, 0, 0)
 ambient_light_source = 1
-ambient_light_color = Color(0.1, 0.1, 0.15, 1)
+ambient_light_color = Color(0.15, 0.15, 0.2, 1)
 
 [sub_resource type="SphereMesh" id="SphereMesh_planet"]
-radius = 500.0
-height = 1000.0
+radius = 16.0
+height = 32.0
+radial_segments = 128
+rings = 64
 
-[sub_resource type="StandardMaterial3D" id="Material_planet"]
-albedo_color = Color(0.05, 0.15, 0.4, 1)
-emission_enabled = true
-emission = Color(0.02, 0.08, 0.2, 1)
-emission_energy_multiplier = 0.5
-rim_enabled = true
-rim = 0.4
-rim_tint = 0.3
+[sub_resource type="ShaderMaterial" id="Material_planet"]
+render_priority = 0
+shader = ExtResource("9_earth_shader")
+shader_parameter/earth_texture = ExtResource("6_earth_tex")
+shader_parameter/clouds_texture = ExtResource("8_clouds_tex")
+shader_parameter/cloud_intensity = 1.4
+shader_parameter/cloud_speed = 0.001
+shader_parameter/ocean_color = Color(0.05, 0.3, 0.6, 1)
+shader_parameter/ocean_boost = 1.5
+shader_parameter/atmosphere_color = Color(0.4, 0.7, 1, 1)
+shader_parameter/atmosphere_intensity = 1.8
+shader_parameter/atmosphere_falloff = 3.5
+shader_parameter/ambient_boost = 0.12
+
+[sub_resource type="SphereMesh" id="SphereMesh_atmosphere"]
+radius = 8.5
+height = 17.0
+
+[sub_resource type="ShaderMaterial" id="Material_atmosphere"]
+render_priority = 0
+shader = ExtResource("10_atmo_shader")
+shader_parameter/inner_color = Color(0.3, 0.6, 1, 1)
+shader_parameter/outer_color = Color(0.1, 0.4, 0.9, 1)
+shader_parameter/atmosphere_density = 2.5
+shader_parameter/falloff = 4.5
+shader_parameter/glow_intensity = 1.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0, 0.03, 0.06, 0.7)
@@ -108,28 +134,58 @@ shadow_size = 6
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1"]
 
-[node name="Main" type="Node3D" unique_id=504873798]
+[node name="Main" type="Node2D" unique_id=235657236]
 script = ExtResource("3_main")
 
-[node name="SpaceBackground" parent="." unique_id=1273369359 instance=ExtResource("5_background")]
+[node name="SpaceBackground" parent="." unique_id=1540264082 instance=ExtResource("5_background")]
+layer = -100
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1688807966]
-environment = SubResource("Environment_space")
+[node name="Planets3DLayer" type="CanvasLayer" parent="." unique_id=439341964]
+layer = -50
 
-[node name="SpaceshipTraffic" parent="." unique_id=398315950 instance=ExtResource("2_traffic")]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="Planets3DLayer" unique_id=890594203]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=1025711680]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+[node name="SubViewport" type="SubViewport" parent="Planets3DLayer/SubViewportContainer" unique_id=800699413]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="Planets3DLayer/SubViewportContainer/SubViewport" unique_id=2016621476]
+environment = SubResource("Environment_planets")
+
+[node name="Camera3D" type="Camera3D" parent="Planets3DLayer/SubViewportContainer/SubViewport" unique_id=1045204272]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 30)
 current = true
+fov = 60.0
 
-[node name="Planet" type="MeshInstance3D" parent="." unique_id=1089673363]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="Planets3DLayer/SubViewportContainer/SubViewport" unique_id=1015349489]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 10, 15, 10)
+light_color = Color(0.9, 0.95, 1, 1)
+light_energy = 1.2
+
+[node name="Planet" type="MeshInstance3D" parent="Planets3DLayer/SubViewportContainer/SubViewport" unique_id=920292378]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -16.88, 28.4)
 mesh = SubResource("SphereMesh_planet")
 surface_material_override/0 = SubResource("Material_planet")
+script = ExtResource("7_planet_script")
 
-[node name="HangarOverlay" type="CanvasLayer" parent="." unique_id=336469817]
+[node name="Atmosphere" type="MeshInstance3D" parent="Planets3DLayer/SubViewportContainer/SubViewport/Planet" unique_id=1595928137]
+mesh = SubResource("SphereMesh_atmosphere")
+surface_material_override/0 = SubResource("Material_atmosphere")
+
+[node name="SpaceshipTraffic" parent="." unique_id=617183043 instance=ExtResource("2_traffic")]
+
+[node name="HangarOverlay" type="CanvasLayer" parent="." unique_id=559100088]
 layer = 10
 
-[node name="HangarFrame" type="TextureRect" parent="HangarOverlay" unique_id=40276242]
+[node name="HangarFrame" type="TextureRect" parent="HangarOverlay" unique_id=314481670]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -139,10 +195,10 @@ texture = ExtResource("1_hangar")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="ConsoleUI" type="CanvasLayer" parent="." unique_id=1340847714]
-layer = 11
+[node name="ConsoleUI" type="CanvasLayer" parent="." unique_id=562360687]
+layer = 20
 
-[node name="ConsolePanel" type="PanelContainer" parent="ConsoleUI" unique_id=235267299]
+[node name="ConsolePanel" type="PanelContainer" parent="ConsoleUI" unique_id=1610928440]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -157,18 +213,18 @@ grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 script = ExtResource("4_console")
 
-[node name="MarginContainer" type="MarginContainer" parent="ConsoleUI/ConsolePanel" unique_id=2067253727]
+[node name="MarginContainer" type="MarginContainer" parent="ConsoleUI/ConsolePanel" unique_id=453382427]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer" unique_id=896870637]
+[node name="VBoxContainer" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer" unique_id=575353290]
 layout_mode = 2
 theme_override_constants/separation = 6
 
-[node name="Title" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=2019050976]
+[node name="Title" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=1919751200]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0.4, 0.5, 0.5)
@@ -178,22 +234,22 @@ theme_override_font_sizes/font_size = 15
 text = "[ CREW DEPLOYMENT ]"
 horizontal_alignment = 1
 
-[node name="InputsRow" type="HBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=1903329559]
+[node name="InputsRow" type="HBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=464966815]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="NameColumn" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow" unique_id=1886034717]
+[node name="NameColumn" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow" unique_id=1913679990]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="NameLabel" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/NameColumn" unique_id=1556380650]
+[node name="NameLabel" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/NameColumn" unique_id=46017619]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
 theme_override_font_sizes/font_size = 10
 text = "OPERATIVE NAME:"
 
-[node name="NameInput" type="LineEdit" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/NameColumn" unique_id=1949535892]
+[node name="NameInput" type="LineEdit" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/NameColumn" unique_id=233773105]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
 theme_override_colors/font_placeholder_color = Color(0.3, 0.5, 0.55, 0.5)
@@ -203,18 +259,18 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
 placeholder_text = "Enter designation..."
 caret_blink = true
 
-[node name="RoleColumn" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow" unique_id=1276478921]
+[node name="RoleColumn" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow" unique_id=903782570]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
-[node name="RoleLabel" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/RoleColumn" unique_id=193659732]
+[node name="RoleLabel" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/RoleColumn" unique_id=1388315347]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
 theme_override_font_sizes/font_size = 10
 text = "ASSIGNMENT:"
 
-[node name="RoleInput" type="LineEdit" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/RoleColumn" unique_id=1068566382]
+[node name="RoleInput" type="LineEdit" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/RoleColumn" unique_id=1433096425]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
 theme_override_colors/font_placeholder_color = Color(0.3, 0.5, 0.55, 0.5)
@@ -224,11 +280,11 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
 placeholder_text = "Enter role..."
 caret_blink = true
 
-[node name="Spacer" type="Control" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=576609028]
+[node name="Spacer" type="Control" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=1588615625]
 custom_minimum_size = Vector2(0, 2)
 layout_mode = 2
 
-[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=499959974]
+[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=1787942884]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
 theme_override_colors/font_pressed_color = Color(0.5, 0.85, 0.95, 1)
