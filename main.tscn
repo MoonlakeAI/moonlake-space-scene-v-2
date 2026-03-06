@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://denfea62xsmiq"]
 
-[ext_resource type="Texture2D" uid="uid://5sq2b8woafx2" path="res://assets/images/hangar_frame.png" id="1_hangar"]
+[ext_resource type="Texture2D" path="res://assets/images/hanger_frame_high_res.png" id="1_hangar"]
 [ext_resource type="PackedScene" uid="uid://dxet6xxr2chjc" path="res://scenes/spaceship_traffic.tscn" id="2_traffic"]
 [ext_resource type="Script" uid="uid://dt1mh1uigxsyr" path="res://scripts/main.gd" id="3_main"]
 [ext_resource type="Script" uid="uid://k1h7njup64h8" path="res://scripts/console_panel.gd" id="4_console"]

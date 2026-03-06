@@ -12,9 +12,9 @@ extends CanvasLayer
 
 # Debug colors for each layer (RGBA with low alpha for transparency)
 var debug_colors: Array[Color] = [
-	Color(1.0, 0.0, 0.0, 0.15),  # Layer 0 - Red (far)
-	Color(1.0, 1.0, 0.0, 0.15),  # Layer 1 - Yellow (mid)
-	Color(0.0, 0.5, 1.0, 0.15),  # Layer 2 - Blue (close)
+	Color(1.0, 0.0, 0.0, 0),  # Layer 0 - Red (far)
+	Color(1.0, 1.0, 0.0, 0),  # Layer 1 - Yellow (mid)
+	Color(0.0, 0.5, 1.0, 0),  # Layer 2 - Blue (close)
 ]
 var debug_rects: Array[ColorRect] = []
 
