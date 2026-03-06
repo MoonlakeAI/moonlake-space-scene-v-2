@@ -14,7 +14,7 @@ shader_parameter/star_min_size = 0.002
 shader_parameter/star_max_size = 0.006
 
 [node name="SpaceBackground" type="CanvasLayer"]
-layer = -10
+layer = -100
 script = ExtResource("1_script")
 galaxy_rotation_speed = 0.015
 

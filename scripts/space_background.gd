@@ -16,9 +16,11 @@ func _ready() -> void:
 	# Center galaxy in viewport
 	var viewport_size = get_viewport().get_visible_rect().size
 	if galaxy_sprite:
-		galaxy_sprite.position = viewport_size * 0.5
-		galaxy_sprite.position.y *= 0.6  # Slightly above center
-
+		galaxy_sprite.position = viewport_size * 0.95
+		galaxy_sprite.position.y *= 0.3  # Slightly above center
+		galaxy_sprite.scale.x = 0.3
+		galaxy_sprite.scale.y = 0.3
+		
 func _process(delta: float) -> void:
 	# Slowly spin the galaxy
 	if galaxy_sprite:
