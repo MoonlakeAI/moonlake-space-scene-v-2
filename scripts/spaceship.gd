@@ -2,7 +2,7 @@ class_name Spaceship
 extends Node2D
 
 ## Spaceship component with name, role, and model
-## Moves horizontally across the screen in layers
+## Moves horizontally across the screen with optional non-linear movement
 
 @export var ship_name: String = "Unknown"
 @export var role: String = "Freighter"
@@ -10,6 +10,14 @@ extends Node2D
 @export var direction: int = 1  # 1 = right, -1 = left
 @export var layer_depth: float = 1.0  # Affects scale and speed (bigger = closer/faster)
 @export var show_labels: bool = true
+
+# Non-linear movement parameters
+var drift_amplitude: float = 0.0    # Vertical sine wave drift in pixels
+var drift_frequency: float = 0.0    # How fast the drift oscillates
+var acceleration: float = 0.0       # Speed change per second
+var base_y: float = 0.0             # Original Y position for drift calculation
+var time_alive: float = 0.0         # Time since spawn for drift calculation
+var current_speed: float = 0.0      # Actual speed (changes with acceleration)
 
 var viewport_width: float = 1920.0
 var spawn_margin: float = 400.0
@@ -20,16 +28,38 @@ var spawn_margin: float = 400.0
 
 func _ready() -> void:
 	viewport_width = get_viewport_rect().size.x
+	base_y = position.y
+	current_speed = speed
 	update_labels()
 
 func _process(delta: float) -> void:
-	position.x += speed * direction * delta
+	time_alive += delta
+	
+	# Apply acceleration (speed changes over time)
+	if acceleration != 0.0:
+		current_speed += acceleration * delta
+		# Clamp speed to reasonable bounds
+		current_speed = clampf(current_speed, speed * 0.3, speed * 2.5)
+	
+	# Horizontal movement
+	position.x += current_speed * direction * delta
+	
+	# Vertical drift (sine wave)
+	if drift_amplitude > 0.0:
+		position.y = base_y + sin(time_alive * drift_frequency * TAU) * drift_amplitude
 	
 	# Wrap around when off screen
 	if direction > 0 and position.x > viewport_width + spawn_margin:
 		position.x = -spawn_margin
+		_on_wrap()
 	elif direction < 0 and position.x < -spawn_margin:
 		position.x = viewport_width + spawn_margin
+		_on_wrap()
+
+func _on_wrap() -> void:
+	# Reset time and speed when wrapping for varied behavior
+	time_alive = randf() * 10.0  # Random phase offset
+	current_speed = speed  # Reset to base speed
 
 func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_speed: float) -> void:
 	ship_name = p_name
@@ -39,6 +69,7 @@ func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_s
 	
 	# Closer ships (higher depth) are bigger and move faster
 	speed = p_speed
+	current_speed = p_speed
 	scale = Vector2(layer_depth, layer_depth)
 	
 	# Flip sprite if moving left (but keep labels readable)
@@ -48,6 +79,13 @@ func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_s
 	# Update labels after setup
 	if is_inside_tree():
 		update_labels()
+
+func set_movement_behavior(p_drift_amplitude: float, p_drift_frequency: float, p_acceleration: float) -> void:
+	drift_amplitude = p_drift_amplitude
+	drift_frequency = p_drift_frequency
+	acceleration = p_acceleration
+	# Random starting phase for variety
+	time_alive = randf() * 10.0
 
 func update_labels() -> void:
 	if name_label:
