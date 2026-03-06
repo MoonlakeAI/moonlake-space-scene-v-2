@@ -2,7 +2,7 @@ shader_type canvas_item;
 
 // Dark Space Background with Simple Flickering Stars
 
-uniform vec4 background_color : source_color = vec4(0.0, 0.0, 0.0, 1.0);
+uniform vec4 background_color : source_color = vec4(0.0, 0.0, 0.0, 0.0);  // Transparent to show image behind
 uniform float star_density : hint_range(0.001, 0.02) = 0.008;
 uniform float star_brightness : hint_range(0.3, 2.0) = 1.0;
 uniform float star_flicker_speed : hint_range(1.0, 15.0) = 6.0;
@@ -22,8 +22,9 @@ void fragment() {
     vec2 uv = UV;
     float time = TIME;
     
-    // Pure black background
-    vec3 color = background_color.rgb;
+    // Start with transparent - image shows through
+    vec3 color = vec3(0.0);
+    float alpha = 0.0;
     
     // Simple flickering star dots - multiple layers for depth
     for (int layer = 0; layer < 3; layer++) {
@@ -65,8 +66,9 @@ void fragment() {
             star_alpha *= 1.0 - float(layer) * 0.25;
             
             color += star_color * star_alpha;
+            alpha = max(alpha, star_alpha);
         }
     }
     
-    COLOR = vec4(color, 1.0);
+    COLOR = vec4(color, alpha);
 }

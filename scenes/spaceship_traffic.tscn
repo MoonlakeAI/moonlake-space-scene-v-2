@@ -10,4 +10,4 @@ script = ExtResource("1_traffic")
 spaceship_scene = ExtResource("2_spaceship")
 spaceship_texture = ExtResource("3_texture")
 max_ships = 12
-debug_show_layers = true
+debug_show_layers = false

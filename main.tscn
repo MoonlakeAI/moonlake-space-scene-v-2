@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://denfea62xsmiq"]
 
-[ext_resource type="Texture2D" path="res://assets/images/hanger_frame_high_res.png" id="1_hangar"]
+[ext_resource type="Texture2D" uid="uid://gp15v723g51k" path="res://assets/images/hanger_frame_high_res.png" id="1_hangar"]
 [ext_resource type="PackedScene" uid="uid://dxet6xxr2chjc" path="res://scenes/spaceship_traffic.tscn" id="2_traffic"]
 [ext_resource type="Script" uid="uid://dt1mh1uigxsyr" path="res://scripts/main.gd" id="3_main"]
 [ext_resource type="Script" uid="uid://k1h7njup64h8" path="res://scripts/console_panel.gd" id="4_console"]
-[ext_resource type="PackedScene" path="res://scenes/space_background.tscn" id="5_background"]
+[ext_resource type="PackedScene" uid="uid://ce0i3w1158bj6" path="res://scenes/space_background.tscn" id="5_background"]
 [ext_resource type="Texture2D" uid="uid://lgjaqrnpuytw" path="res://assets/images/earth_texture.png" id="6_earth_tex"]
 [ext_resource type="Script" uid="uid://dluq5rn16f030" path="res://scripts/planet_rotation.gd" id="7_planet_script"]
 [ext_resource type="Texture2D" uid="uid://b4gcv71lo4dqs" path="res://assets/images/earth_clouds.jpg" id="8_clouds_tex"]
@@ -12,7 +12,7 @@
 [ext_resource type="Shader" uid="uid://ck8jmf61hiaev" path="res://shaders/atmosphere.gdshader" id="10_atmo_shader"]
 [ext_resource type="Shader" uid="uid://c7r12s2lu58qg" path="res://shaders/cloud_layer.gdshader" id="11_cloud_shader"]
 [ext_resource type="Script" uid="uid://eajvkf35xig7" path="res://scripts/cloud_rotation.gd" id="12_cloud_script"]
-[ext_resource type="Shader" path="res://shaders/hangar_frame.gdshader" id="13_hangar_shader"]
+[ext_resource type="Shader" uid="uid://dn6yovtkuhpqe" path="res://shaders/hangar_frame.gdshader" id="13_hangar_shader"]
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -65,6 +65,16 @@ shader_parameter/outer_color = Color(0.1, 0.4, 0.9, 1)
 shader_parameter/atmosphere_density = 2.5
 shader_parameter/falloff = 4.5
 shader_parameter/glow_intensity = 1.0
+
+[sub_resource type="ShaderMaterial" id="Material_hangar"]
+shader = ExtResource("13_hangar_shader")
+shader_parameter/breath_speed = 2.0
+shader_parameter/breath_intensity = 0.5
+shader_parameter/flicker_speed = 15.0
+shader_parameter/flicker_intensity = 0.25
+shader_parameter/cyan_hue_min = 0.4
+shader_parameter/cyan_hue_max = 0.58
+shader_parameter/saturation_threshold = 0.15
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0, 0.03, 0.06, 0.7)
@@ -150,16 +160,6 @@ shadow_size = 6
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1"]
 
-[sub_resource type="ShaderMaterial" id="Material_hangar"]
-shader = ExtResource("13_hangar_shader")
-shader_parameter/breath_speed = 2.0
-shader_parameter/breath_intensity = 0.5
-shader_parameter/flicker_speed = 15.0
-shader_parameter/flicker_intensity = 0.25
-shader_parameter/cyan_hue_min = 0.40
-shader_parameter/cyan_hue_max = 0.58
-shader_parameter/saturation_threshold = 0.15
-
 [node name="Main" type="Node2D" unique_id=235657236]
 script = ExtResource("3_main")
 
@@ -216,7 +216,7 @@ surface_material_override/0 = SubResource("Material_atmosphere")
 [node name="HangarOverlay" type="CanvasLayer" parent="." unique_id=559100088]
 layer = 10
 
-[node name="HangarFrame" type="TextureRect" parent="HangarOverlay"]
+[node name="HangarFrame" type="TextureRect" parent="HangarOverlay" unique_id=1670368136]
 material = SubResource("Material_hangar")
 anchors_preset = 15
 anchor_right = 1.0

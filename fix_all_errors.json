@@ -1,0 +1,20 @@
+{
+	"errors": [
+		{
+			"message": "Using 'return' in the 'fragment' processor function is incorrect.",
+			"source_file": "res://shaders/space_background_colors.gdshader",
+			"source_line": 67
+		},
+		{
+			"message": "set_code: Shader compilation failed.",
+			"source_file": "servers\\rendering\\renderer_rd\\renderer_canvas_render_rd.cpp",
+			"source_line": 1587
+		},
+		{
+			"message": "version_get_shader: Parameter \"version\" is null.",
+			"source_file": "./servers/rendering/renderer_rd/shader_rd.h",
+			"source_line": 184
+		}
+	],
+	"warnings": []
+}
