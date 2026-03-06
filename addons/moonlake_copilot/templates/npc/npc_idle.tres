@@ -1,0 +1,24 @@
+[gd_resource type="BehaviorTree" load_steps=5 format=3 uid="uid://b1y6dwrslptsx"]
+
+[sub_resource type="BlackboardPlan" id="BlackboardPlan_idle"]
+var/anim_player_path/name = &"anim_player_path"
+var/anim_player_path/type = 22
+var/anim_player_path/value = NodePath("Visuals/AnimationPlayer")
+var/anim_player_path/hint = 0
+var/anim_player_path/hint_string = ""
+
+[sub_resource type="BBNode" id="BBNode_anim"]
+resource_name = "Visuals/AnimationPlayer"
+saved_value = NodePath("Visuals/AnimationPlayer")
+
+[sub_resource type="BTPlayAnimation" id="BTPlayAnimation_idle"]
+animation_player = SubResource("BBNode_anim")
+animation_name = &"default/Idle"
+blend = 0.1
+
+[sub_resource type="BTSequence" id="BTSequence_main"]
+children = [SubResource("BTPlayAnimation_idle")]
+
+[resource]
+blackboard_plan = SubResource("BlackboardPlan_idle")
+root_task = SubResource("BTSequence_main")

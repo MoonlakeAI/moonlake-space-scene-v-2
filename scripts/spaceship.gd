@@ -1,0 +1,70 @@
+class_name Spaceship
+extends Node2D
+
+## Spaceship component with name, role, and model
+## Moves horizontally across the screen in layers
+
+@export var ship_name: String = "Unknown"
+@export var role: String = "Freighter"
+@export var speed: float = 50.0
+@export var direction: int = 1  # 1 = right, -1 = left
+@export var layer_depth: float = 1.0  # Affects scale and speed (bigger = closer/faster)
+@export var show_labels: bool = true
+
+var viewport_width: float = 1920.0
+var spawn_margin: float = 400.0
+
+@onready var name_label: Label = $LabelContainer/NameLabel
+@onready var role_label: Label = $LabelContainer/RoleLabel
+@onready var label_container: Control = $LabelContainer
+
+func _ready() -> void:
+	viewport_width = get_viewport_rect().size.x
+	update_labels()
+
+func _process(delta: float) -> void:
+	position.x += speed * direction * delta
+	
+	# Wrap around when off screen
+	if direction > 0 and position.x > viewport_width + spawn_margin:
+		position.x = -spawn_margin
+	elif direction < 0 and position.x < -spawn_margin:
+		position.x = viewport_width + spawn_margin
+
+func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_speed: float) -> void:
+	ship_name = p_name
+	role = p_role
+	direction = p_direction
+	layer_depth = p_depth
+	
+	# Closer ships (higher depth) are bigger and move faster
+	speed = p_speed
+	scale = Vector2(layer_depth, layer_depth)
+	
+	# Flip sprite if moving left (but keep labels readable)
+	if direction < 0:
+		scale.x *= -1
+	
+	# Update labels after setup
+	if is_inside_tree():
+		update_labels()
+
+func update_labels() -> void:
+	if name_label:
+		name_label.text = ship_name.to_upper()
+	if role_label:
+		role_label.text = role
+	
+	# Keep labels upright even when ship is flipped
+	if label_container and direction < 0:
+		label_container.scale.x = -1
+
+func set_labels_visible(labels_visible: bool) -> void:
+	show_labels = labels_visible
+	if label_container:
+		label_container.visible = labels_visible
+
+func set_texture(texture: Texture2D) -> void:
+	var sprite = $Sprite2D
+	if sprite:
+		sprite.texture = texture

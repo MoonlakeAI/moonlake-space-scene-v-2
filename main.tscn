@@ -1,0 +1,241 @@
+[gd_scene format=3 uid="uid://denfea62xsmiq"]
+
+[ext_resource type="Texture2D" uid="uid://5sq2b8woafx2" path="res://assets/images/hangar_frame.png" id="1_hangar"]
+[ext_resource type="PackedScene" path="res://scenes/spaceship_traffic.tscn" id="2_traffic"]
+[ext_resource type="Script" uid="uid://dt1mh1uigxsyr" path="res://scripts/main.gd" id="3_main"]
+[ext_resource type="Script" uid="uid://k1h7njup64h8" path="res://scripts/console_panel.gd" id="4_console"]
+[ext_resource type="PackedScene" path="res://scenes/space_background.tscn" id="5_background"]
+
+[sub_resource type="Environment" id="Environment_space"]
+background_mode = 1
+ambient_light_source = 1
+ambient_light_color = Color(0.1, 0.1, 0.15, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_planet"]
+radius = 500.0
+height = 1000.0
+
+[sub_resource type="StandardMaterial3D" id="Material_planet"]
+albedo_color = Color(0.05, 0.15, 0.4, 1)
+emission_enabled = true
+emission = Color(0.02, 0.08, 0.2, 1)
+emission_energy_multiplier = 0.5
+rim_enabled = true
+rim = 0.4
+rim_tint = 0.3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0, 0.03, 0.06, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.55, 0.7, 0.8)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0.45, 0.55, 0.3)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input"]
+bg_color = Color(0, 0.02, 0.04, 0.6)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.5, 0.65, 0.7)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_input_focus"]
+bg_color = Color(0, 0.03, 0.06, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.6, 0.75, 0.9)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+shadow_color = Color(0, 0.5, 0.6, 0.35)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
+bg_color = Color(0, 0.04, 0.07, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.55, 0.7, 0.85)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0.45, 0.55, 0.25)
+shadow_size = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
+bg_color = Color(0, 0.1, 0.15, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.7, 0.85, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0.55, 0.65, 0.45)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0, 0.06, 0.1, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.65, 0.8, 0.95)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+shadow_color = Color(0, 0.5, 0.6, 0.4)
+shadow_size = 6
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_1"]
+
+[node name="Main" type="Node3D" unique_id=504873798]
+script = ExtResource("3_main")
+
+[node name="SpaceBackground" parent="." unique_id=1273369359 instance=ExtResource("5_background")]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1688807966]
+environment = SubResource("Environment_space")
+
+[node name="SpaceshipTraffic" parent="." unique_id=398315950 instance=ExtResource("2_traffic")]
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=1025711680]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+current = true
+
+[node name="Planet" type="MeshInstance3D" parent="." unique_id=1089673363]
+mesh = SubResource("SphereMesh_planet")
+surface_material_override/0 = SubResource("Material_planet")
+
+[node name="HangarOverlay" type="CanvasLayer" parent="." unique_id=336469817]
+layer = 10
+
+[node name="HangarFrame" type="TextureRect" parent="HangarOverlay" unique_id=40276242]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_hangar")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="ConsoleUI" type="CanvasLayer" parent="." unique_id=1340847714]
+layer = 11
+
+[node name="ConsolePanel" type="PanelContainer" parent="ConsoleUI" unique_id=235267299]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -220.0
+offset_top = -110.0
+offset_right = 220.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("4_console")
+
+[node name="MarginContainer" type="MarginContainer" parent="ConsoleUI/ConsolePanel" unique_id=2067253727]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer" unique_id=896870637]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=2019050976]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0.4, 0.5, 0.5)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 15
+text = "[ CREW DEPLOYMENT ]"
+horizontal_alignment = 1
+
+[node name="InputsRow" type="HBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=1903329559]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="NameColumn" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow" unique_id=1886034717]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/NameColumn" unique_id=1556380650]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "OPERATIVE NAME:"
+
+[node name="NameInput" type="LineEdit" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/NameColumn" unique_id=1949535892]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
+theme_override_colors/font_placeholder_color = Color(0.3, 0.5, 0.55, 0.5)
+theme_override_colors/caret_color = Color(0, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "Enter designation..."
+caret_blink = true
+
+[node name="RoleColumn" type="VBoxContainer" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow" unique_id=1276478921]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="RoleLabel" type="Label" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/RoleColumn" unique_id=193659732]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "ASSIGNMENT:"
+
+[node name="RoleInput" type="LineEdit" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer/InputsRow/RoleColumn" unique_id=1068566382]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
+theme_override_colors/font_placeholder_color = Color(0.3, 0.5, 0.55, 0.5)
+theme_override_colors/caret_color = Color(0, 1, 1, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_input")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "Enter role..."
+caret_blink = true
+
+[node name="Spacer" type="Control" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=576609028]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+
+[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel/MarginContainer/VBoxContainer" unique_id=499959974]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
+theme_override_colors/font_pressed_color = Color(0.5, 0.85, 0.95, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
+text = ">> LAUNCH <<"
