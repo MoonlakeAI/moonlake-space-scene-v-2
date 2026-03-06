@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://denfea62xsmiq"]
 
 [ext_resource type="Texture2D" uid="uid://5sq2b8woafx2" path="res://assets/images/hangar_frame.png" id="1_hangar"]
-[ext_resource type="PackedScene" path="res://scenes/spaceship_traffic.tscn" id="2_traffic"]
+[ext_resource type="PackedScene" uid="uid://dxet6xxr2chjc" path="res://scenes/spaceship_traffic.tscn" id="2_traffic"]
 [ext_resource type="Script" uid="uid://dt1mh1uigxsyr" path="res://scripts/main.gd" id="3_main"]
 [ext_resource type="Script" uid="uid://k1h7njup64h8" path="res://scripts/console_panel.gd" id="4_console"]
 [ext_resource type="PackedScene" path="res://scenes/space_background.tscn" id="5_background"]
@@ -10,6 +10,8 @@
 [ext_resource type="Texture2D" uid="uid://b4gcv71lo4dqs" path="res://assets/images/earth_clouds.jpg" id="8_clouds_tex"]
 [ext_resource type="Shader" uid="uid://bqkxgyewu3hho" path="res://shaders/earth_planet.gdshader" id="9_earth_shader"]
 [ext_resource type="Shader" uid="uid://ck8jmf61hiaev" path="res://shaders/atmosphere.gdshader" id="10_atmo_shader"]
+[ext_resource type="Shader" uid="uid://c7r12s2lu58qg" path="res://shaders/cloud_layer.gdshader" id="11_cloud_shader"]
+[ext_resource type="Script" uid="uid://eajvkf35xig7" path="res://scripts/cloud_rotation.gd" id="12_cloud_script"]
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -36,6 +38,19 @@ shader_parameter/atmosphere_color = Color(0.4, 0.7, 1, 1)
 shader_parameter/atmosphere_intensity = 1.8
 shader_parameter/atmosphere_falloff = 3.5
 shader_parameter/ambient_boost = 0.12
+
+[sub_resource type="SphereMesh" id="SphereMesh_clouds"]
+radius = 16.03
+height = 32.06
+
+[sub_resource type="ShaderMaterial" id="Material_clouds"]
+render_priority = 0
+shader = ExtResource("11_cloud_shader")
+shader_parameter/clouds_texture = ExtResource("8_clouds_tex")
+shader_parameter/cloud_opacity = 0.55
+shader_parameter/cloud_speed = 0.006
+shader_parameter/opacity_variation = 0.35
+shader_parameter/cloud_tint = Color(1, 1, 1, 1)
 
 [sub_resource type="SphereMesh" id="SphereMesh_atmosphere"]
 radius = 8.5
@@ -138,7 +153,6 @@ shadow_size = 6
 script = ExtResource("3_main")
 
 [node name="SpaceBackground" parent="." unique_id=1540264082 instance=ExtResource("5_background")]
-layer = -100
 
 [node name="Planets3DLayer" type="CanvasLayer" parent="." unique_id=439341964]
 layer = -50
@@ -176,7 +190,13 @@ mesh = SubResource("SphereMesh_planet")
 surface_material_override/0 = SubResource("Material_planet")
 script = ExtResource("7_planet_script")
 
-[node name="Atmosphere" type="MeshInstance3D" parent="Planets3DLayer/SubViewportContainer/SubViewport/Planet" unique_id=1595928137]
+[node name="CloudLayer" type="MeshInstance3D" parent="Planets3DLayer/SubViewportContainer/SubViewport/Planet" unique_id=1936110947]
+mesh = SubResource("SphereMesh_clouds")
+surface_material_override/0 = SubResource("Material_clouds")
+script = ExtResource("12_cloud_script")
+rotation_speed = 0.0
+
+[node name="Atmosphere" type="MeshInstance3D" parent="Planets3DLayer/SubViewportContainer/SubViewport/Planet" unique_id=1404380836]
 mesh = SubResource("SphereMesh_atmosphere")
 surface_material_override/0 = SubResource("Material_atmosphere")
 
