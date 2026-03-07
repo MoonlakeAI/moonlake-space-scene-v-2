@@ -16,6 +16,8 @@ shader_parameter/glitch_chance = 0.03
 
 [node name="Spaceship" type="Node2D" unique_id=975017772]
 script = ExtResource("1_spaceship")
+label_offset_x_looking_right = -180.0
+label_offset_x_looking_left = 180.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1149275496]
 
@@ -23,9 +25,9 @@ script = ExtResource("1_spaceship")
 layout_mode = 3
 anchors_preset = 0
 offset_left = -109.725
-offset_top = -37.68
+offset_top = -27.65
 offset_right = 130.27484
-offset_bottom = 22.32
+offset_bottom = 32.35
 
 [node name="NameLabel" type="Label" parent="LabelContainer" unique_id=1429957993]
 material = SubResource("ShaderMaterial_holo")

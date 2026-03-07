@@ -30,4 +30,6 @@ ui/chat_input_height=216.0
 
 [rendering]
 
+anti_aliasing/quality/msaa_2d=3
+anti_aliasing/quality/msaa_3d=3
 rendering_device/driver.windows="d3d12"

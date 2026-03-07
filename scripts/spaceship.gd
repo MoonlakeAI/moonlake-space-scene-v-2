@@ -11,6 +11,10 @@ extends Node2D
 @export var layer_depth: float = 1.0  # Affects scale and speed (bigger = closer/faster)
 @export var show_labels: bool = true
 
+@export_group("Label Offsets")
+@export var label_offset_x_looking_right: float = -110.0  ## X offset when ship faces right
+@export var label_offset_x_looking_left: float = 110.0   ## X offset when ship faces left
+
 # Non-linear movement parameters
 var drift_amplitude: float = 0.0    # Vertical sine wave drift in pixels
 var drift_frequency: float = 0.0    # How fast the drift oscillates
@@ -26,19 +30,17 @@ var spawn_margin: float = 400.0
 @onready var role_label: Label = $LabelContainer/RoleLabel
 @onready var label_container: Control = $LabelContainer
 
-# Store original label offsets for mirroring when ship flips
-var _original_label_offset_left: float = 0.0
-var _original_label_offset_right: float = 0.0
+# Store original label width for positioning
+var _label_width: float = 240.0
 
 func _ready() -> void:
 	viewport_width = get_viewport_rect().size.x
 	base_y = position.y
 	current_speed = speed
 	
-	# Store original label container offsets for mirroring
+	# Calculate label width from original offsets
 	if label_container:
-		_original_label_offset_left = label_container.offset_left
-		_original_label_offset_right = label_container.offset_right
+		_label_width = label_container.offset_right - label_container.offset_left
 	
 	update_labels()
 
@@ -108,14 +110,14 @@ func update_labels() -> void:
 		if direction < 0:
 			# Flip scale to keep text readable
 			label_container.scale.x = -1
-			# Mirror the horizontal offsets so labels stay on the correct side of the ship
-			label_container.offset_left = -_original_label_offset_right
-			label_container.offset_right = -_original_label_offset_left
+			# Use custom offset for left-facing ships
+			label_container.offset_left = label_offset_x_looking_left
+			label_container.offset_right = label_offset_x_looking_left + _label_width
 		else:
-			# Reset to original position for right-moving ships
+			# Use custom offset for right-facing ships
 			label_container.scale.x = 1
-			label_container.offset_left = _original_label_offset_left
-			label_container.offset_right = _original_label_offset_right
+			label_container.offset_left = label_offset_x_looking_right
+			label_container.offset_right = label_offset_x_looking_right + _label_width
 
 func set_labels_visible(labels_visible: bool) -> void:
 	show_labels = labels_visible
