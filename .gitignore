@@ -14,3 +14,10 @@ export_credentials.cfg
 .mono/
 data_*/
 mono_crash.*.json
+
+# Backend secrets
+backend/.env
+.bash_sessions/
+.moonlake/
+
+.DS_Store

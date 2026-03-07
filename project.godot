@@ -15,6 +15,10 @@ run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.6", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+Config="*res://autoload/Config.gd"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/moonlake_copilot/plugin.cfg", "res://addons/terrain_3d/plugin.cfg")
@@ -22,7 +26,8 @@ enabled=PackedStringArray("res://addons/moonlake_copilot/plugin.cfg", "res://add
 [moonlake]
 
 general/project_type="3d"
-ui/chat_input_height=216.0
+ui/chat_input_height=386.0
+agent_behavior/escape_key_stops_agent=true
 
 [physics]
 
