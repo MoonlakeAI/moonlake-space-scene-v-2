@@ -5,7 +5,8 @@ extends CanvasLayer
 ## Each layer has rows - farther layers have more rows, closer layers have fewer
 
 @export var spaceship_scene: PackedScene
-@export var spaceship_texture: Texture2D
+@export var spaceship_textures: Array[Texture2D] = []  ## Array of spaceship textures to randomly choose from
+@export var spaceship_scale: float = 0.4  ## Scale factor for spaceship sprites (adjust to fit scene)
 @export var min_ships: int = 8
 @export var max_ships: int = 14
 @export var debug_show_layers: bool = false  ## Enable to show colored layer regions
@@ -133,9 +134,12 @@ func spawn_initial_ships() -> void:
 		spawn_random_ship()
 
 func spawn_random_ship() -> void:
-	if not spaceship_scene or not spaceship_texture:
-		push_warning("SpaceshipTraffic: Missing spaceship_scene or spaceship_texture")
+	if not spaceship_scene or spaceship_textures.is_empty():
+		push_warning("SpaceshipTraffic: Missing spaceship_scene or spaceship_textures")
 		return
+	
+	# Randomly select a texture from the array
+	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
@@ -181,16 +185,20 @@ func spawn_random_ship() -> void:
 	ship.setup(data[0], data[1], direction, layer_config["depth"], base_speed)
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
-	ship.set_texture(spaceship_texture)
+	ship.set_texture(selected_texture)
+	ship.apply_texture_scale(spaceship_scale)
 	
-	# Farther ships more transparent
-	ship.modulate.a = 0.5 + (layer_config["depth"] * 0.5)
+	# Full opacity for all ships
+	ship.modulate.a = 1.0
 	
 	add_child(ship)
 
 func spawn_ship_at_layer(layer_index: int, row_index: int, ship_name: String, ship_role: String) -> Spaceship:
-	if not spaceship_scene or not spaceship_texture:
+	if not spaceship_scene or spaceship_textures.is_empty():
 		return null
+	
+	# Randomly select a texture from the array
+	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
@@ -214,16 +222,20 @@ func spawn_ship_at_layer(layer_index: int, row_index: int, ship_name: String, sh
 	ship.setup(ship_name, ship_role, direction, layer_config["depth"], base_speed)
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
-	ship.set_texture(spaceship_texture)
-	ship.modulate.a = 0.5 + (layer_config["depth"] * 0.5)
+	ship.set_texture(selected_texture)
+	ship.apply_texture_scale(spaceship_scale)
+	ship.modulate.a = 1.0
 	
 	add_child(ship)
 	return ship
 
 func spawn_player_ship(ship_name: String, ship_role: String) -> Spaceship:
 	"""Spawn a ship from player input - spawns in the closest layer for visibility"""
-	if not spaceship_scene or not spaceship_texture:
+	if not spaceship_scene or spaceship_textures.is_empty():
 		return null
+	
+	# Randomly select a texture from the array
+	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
@@ -242,7 +254,8 @@ func spawn_player_ship(ship_name: String, ship_role: String) -> Spaceship:
 	ship.setup(ship_name, ship_role, direction, layer_config["depth"], layer_config["speed"])
 	ship.set_movement_behavior(0.0, 0.0, 0.0)  # Steady movement for player ships
 	ship.position = Vector2(x_pos, y_pos)
-	ship.set_texture(spaceship_texture)
+	ship.set_texture(selected_texture)
+	ship.apply_texture_scale(spaceship_scale)
 	ship.modulate.a = 1.0  # Full opacity for player ships
 	
 	add_child(ship)

@@ -26,10 +26,20 @@ var spawn_margin: float = 400.0
 @onready var role_label: Label = $LabelContainer/RoleLabel
 @onready var label_container: Control = $LabelContainer
 
+# Store original label offsets for mirroring when ship flips
+var _original_label_offset_left: float = 0.0
+var _original_label_offset_right: float = 0.0
+
 func _ready() -> void:
 	viewport_width = get_viewport_rect().size.x
 	base_y = position.y
 	current_speed = speed
+	
+	# Store original label container offsets for mirroring
+	if label_container:
+		_original_label_offset_left = label_container.offset_left
+		_original_label_offset_right = label_container.offset_right
+	
 	update_labels()
 
 func _process(delta: float) -> void:
@@ -93,9 +103,19 @@ func update_labels() -> void:
 	if role_label:
 		role_label.text = role
 	
-	# Keep labels upright even when ship is flipped
-	if label_container and direction < 0:
-		label_container.scale.x = -1
+	# Keep labels upright and properly positioned when ship is flipped
+	if label_container:
+		if direction < 0:
+			# Flip scale to keep text readable
+			label_container.scale.x = -1
+			# Mirror the horizontal offsets so labels stay on the correct side of the ship
+			label_container.offset_left = -_original_label_offset_right
+			label_container.offset_right = -_original_label_offset_left
+		else:
+			# Reset to original position for right-moving ships
+			label_container.scale.x = 1
+			label_container.offset_left = _original_label_offset_left
+			label_container.offset_right = _original_label_offset_right
 
 func set_labels_visible(labels_visible: bool) -> void:
 	show_labels = labels_visible
@@ -106,3 +126,9 @@ func set_texture(texture: Texture2D) -> void:
 	var sprite = $Sprite2D
 	if sprite:
 		sprite.texture = texture
+
+func apply_texture_scale(scale_factor: float) -> void:
+	## Apply a scale factor to the sprite for sizing adjustments
+	var sprite = $Sprite2D
+	if sprite:
+		sprite.scale = Vector2(scale_factor, scale_factor)

@@ -1,11 +1,11 @@
-[gd_scene load_steps=4 format=4]
+[gd_scene format=3 uid="uid://cdu0tnrjib63w"]
 
-[ext_resource type="Script" path="res://scripts/spaceship.gd" id="1_spaceship"]
-[ext_resource type="Shader" path="res://shaders/holographic_text.gdshader" id="2_shader"]
+[ext_resource type="Script" uid="uid://rtscgxa2lnm2" path="res://scripts/spaceship.gd" id="1_spaceship"]
+[ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="2_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_holo"]
 shader = ExtResource("2_shader")
-shader_parameter/holo_color = Color(0.2, 0.85, 1.0, 1.0)
+shader_parameter/holo_color = Color(0.2, 0.85, 1, 1)
 shader_parameter/flicker_speed = 8.0
 shader_parameter/flicker_intensity = 0.25
 shader_parameter/scanline_density = 60.0
@@ -14,29 +14,30 @@ shader_parameter/glow_strength = 0.6
 shader_parameter/distortion_amount = 0.002
 shader_parameter/glitch_chance = 0.03
 
-[node name="Spaceship" type="Node2D"]
+[node name="Spaceship" type="Node2D" unique_id=975017772]
 script = ExtResource("1_spaceship")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1149275496]
 
-[node name="LabelContainer" type="Control" parent="."]
+[node name="LabelContainer" type="Control" parent="." unique_id=602022820]
+layout_mode = 3
 anchors_preset = 0
-offset_left = -120.0
-offset_top = -25.0
-offset_right = 120.0
-offset_bottom = 35.0
+offset_left = -109.725
+offset_top = -37.68
+offset_right = 130.27484
+offset_bottom = 22.32
 
-[node name="NameLabel" type="Label" parent="LabelContainer"]
+[node name="NameLabel" type="Label" parent="LabelContainer" unique_id=1429957993]
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 0
 offset_right = 240.0
 offset_bottom = 30.0
-theme_override_colors/font_color = Color(0.3, 0.9, 1.0, 1)
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 22
 text = "SHIP NAME"
 horizontal_alignment = 1
 
-[node name="RoleLabel" type="Label" parent="LabelContainer"]
+[node name="RoleLabel" type="Label" parent="LabelContainer" unique_id=465078294]
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 0
 offset_top = 28.0
