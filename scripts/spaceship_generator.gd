@@ -14,17 +14,32 @@ const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/nimble_transport.png"
 ]
 
-@onready var prompt_input: TextEdit = $MarginContainer/VBoxContainer/PromptInput
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
 @onready var status_label: Label = $MarginContainer/VBoxContainer/StatusLabel
 @onready var preview_container: PanelContainer = $MarginContainer/VBoxContainer/PreviewContainer
 @onready var preview_image: TextureRect = $MarginContainer/VBoxContainer/PreviewContainer/PreviewImage
+@onready var code_button: Button = $MarginContainer/VBoxContainer/TitleRow/CodeButton
+@onready var progress_bar: HBoxContainer = $MarginContainer/VBoxContainer/ProgressBar
+
+# Prompt overlay references (sibling node under ConsoleUI)
+@onready var prompt_overlay: PanelContainer = $"../PromptOverlay"
+@onready var prompt_input: TextEdit = $"../PromptOverlay/MarginContainer/VBoxContainer/PromptInput"
+@onready var close_button: Button = $"../PromptOverlay/MarginContainer/VBoxContainer/HeaderRow/CloseButton"
+@onready var apply_button: Button = $"../PromptOverlay/MarginContainer/VBoxContainer/ApplyButton"
+
+# Progress bar colors
+const COLOR_FILLED := Color(0.3, 0.7, 0.8, 1.0)
+const COLOR_EMPTY := Color(0.15, 0.3, 0.35, 0.5)
+const GEAR_SPIN_SPEED := 2.0
 
 var _http_request: HTTPRequest
 var _download_request: HTTPRequest
 var _poll_timer: Timer
 var _current_job_id: String = ""
 var _is_generating := false
+var _current_prompt: String = DEFAULT_PROMPT
+var _progress_blocks: Array[ColorRect] = []
+var _gear_rotation: float = 0.0
 
 
 func _ready() -> void:
@@ -45,15 +60,70 @@ func _ready() -> void:
 	
 	# Connect UI
 	generate_button.pressed.connect(_on_generate_pressed)
+	code_button.pressed.connect(_on_code_button_pressed)
+	close_button.pressed.connect(_on_close_overlay)
+	apply_button.pressed.connect(_on_apply_prompt)
+	
+	# Cache progress bar blocks
+	for child in progress_bar.get_children():
+		if child is ColorRect:
+			_progress_blocks.append(child)
+	
+	# Set gear button pivot for rotation
+	code_button.pivot_offset = code_button.size / 2
 	
 	# Set default prompt
-	prompt_input.text = DEFAULT_PROMPT
+	prompt_input.text = _current_prompt
 	
-	# Hide preview initially
+	# Hide preview, overlay, and progress bar initially
 	preview_container.visible = false
+	prompt_overlay.visible = false
+	progress_bar.visible = false
 	
 	# Ensure save directory exists
 	_ensure_save_dir()
+
+
+func _process(delta: float) -> void:
+	# Spin gear icon when generating
+	if _is_generating:
+		_gear_rotation += delta * GEAR_SPIN_SPEED
+		code_button.rotation = _gear_rotation
+	else:
+		code_button.rotation = 0.0
+
+
+func _update_progress(percent: int) -> void:
+	var filled_count := int(float(percent) / 100.0 * _progress_blocks.size())
+	for i in range(_progress_blocks.size()):
+		if i < filled_count:
+			_progress_blocks[i].color = COLOR_FILLED
+		else:
+			_progress_blocks[i].color = COLOR_EMPTY
+
+
+func _show_progress() -> void:
+	progress_bar.visible = true
+	_update_progress(0)
+
+
+func _hide_progress() -> void:
+	progress_bar.visible = false
+
+
+func _on_code_button_pressed() -> void:
+	prompt_input.text = _current_prompt
+	prompt_overlay.visible = true
+
+
+func _on_close_overlay() -> void:
+	prompt_overlay.visible = false
+
+
+func _on_apply_prompt() -> void:
+	_current_prompt = prompt_input.text
+	prompt_overlay.visible = false
+	status_label.text = "Prompt updated"
 
 
 func _ensure_save_dir() -> void:
@@ -65,7 +135,7 @@ func _on_generate_pressed() -> void:
 		status_label.text = "Already generating..."
 		return
 	
-	var prompt := prompt_input.text.strip_edges()
+	var prompt := _current_prompt.strip_edges()
 	if prompt.is_empty():
 		status_label.text = "Please enter a prompt"
 		return
@@ -76,8 +146,9 @@ func _on_generate_pressed() -> void:
 func _start_generation(prompt: String) -> void:
 	_is_generating = true
 	generate_button.disabled = true
-	status_label.text = "Connecting to server..."
+	status_label.text = "Connecting..."
 	preview_container.visible = false
+	_show_progress()
 	
 	var url := Config.api_url("generate-image")
 	var body := JSON.stringify({
@@ -168,13 +239,14 @@ func _on_poll_completed(result: int, response_code: int, _headers: PackedStringA
 		_poll_timer.stop()
 		_on_error(str(data.get("error", "Generation failed")))
 	else:
-		# Show different messages based on progress
+		# Update progress bar and status message
+		_update_progress(progress)
 		if progress < 30:
-			status_label.text = "Generating image... %d%%" % progress
+			status_label.text = "Generating image..."
 		elif progress < 80:
-			status_label.text = "Processing... %d%%" % progress
+			status_label.text = "Processing..."
 		else:
-			status_label.text = "Removing background... %d%%" % progress
+			status_label.text = "Removing background..."
 
 
 func _on_generation_complete(data: Dictionary) -> void:
@@ -293,6 +365,7 @@ func _reset_state() -> void:
 	_current_job_id = ""
 	generate_button.disabled = false
 	_poll_timer.stop()
+	_hide_progress()
 
 
 func _play_success_effect() -> void:

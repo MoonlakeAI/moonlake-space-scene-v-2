@@ -354,20 +354,23 @@ theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
 text = ">> LAUNCH <<"
 
 [node name="GeneratorPanel" type="PanelContainer" parent="ConsoleUI"]
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -340.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 380.0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -560.0
+offset_top = -140.0
+offset_right = -240.0
+offset_bottom = -20.0
 grow_horizontal = 0
-grow_vertical = 1
+grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 script = ExtResource("14_generator")
 
 [node name="MarginContainer" type="MarginContainer" parent="ConsoleUI/GeneratorPanel"]
 layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
@@ -375,28 +378,110 @@ theme_override_constants/margin_bottom = 8
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer"]
 layout_mode = 2
-theme_override_constants/separation = 6
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+[node name="TitleRow" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
+
+[node name="Title" type="Label" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/TitleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0.4, 0.5, 0.5)
 theme_override_constants/shadow_offset_x = 0
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 13
-text = "[ SPACESHIP GENERATOR ]"
-horizontal_alignment = 1
+text = "[ SPACESHIP BUILDER ]"
 
-[node name="PromptInput" type="TextEdit" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 80)
+[node name="CodeButton" type="Button" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/TitleRow"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
-theme_override_colors/caret_color = Color(0, 1, 1, 1)
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_textedit")
-theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
-placeholder_text = "Enter spaceship description..."
-wrap_mode = 1
+theme_override_colors/font_color = Color(0, 0.9, 0.9, 1)
+theme_override_colors/font_pressed_color = Color(0.4, 1, 1, 1)
+theme_override_colors/font_hover_color = Color(0.2, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxEmpty_1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_1")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_1")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
+text = "⚙"
+
+[node name="StatusLabel" type="Label" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
+theme_override_font_sizes/font_size = 10
+text = "Ready For Deployment"
+horizontal_alignment = 0
+
+[node name="ProgressBar" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+visible = false
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Block1" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block2" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block3" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block4" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block5" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block6" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block7" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block8" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block9" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Block10" type="ColorRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ProgressBar"]
+custom_minimum_size = Vector2(0, 6)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.15, 0.3, 0.35, 0.5)
+
+[node name="Spacer" type="Control" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="GenerateButton" type="Button" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -410,13 +495,6 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
 text = ">> GENERATE <<"
 
-[node name="StatusLabel" type="Label" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
-theme_override_font_sizes/font_size = 10
-text = "Ready"
-horizontal_alignment = 1
-
 [node name="PreviewContainer" type="PanelContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
 visible = false
 custom_minimum_size = Vector2(0, 140)
@@ -429,3 +507,74 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 expand_mode = 1
 stretch_mode = 5
+
+[node name="PromptOverlay" type="PanelContainer" parent="ConsoleUI"]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="ConsoleUI/PromptOverlay"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ConsoleUI/PromptOverlay/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HeaderRow" type="HBoxContainer" parent="ConsoleUI/PromptOverlay/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="OverlayTitle" type="Label" parent="ConsoleUI/PromptOverlay/MarginContainer/VBoxContainer/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 14
+text = "[ PROMPT EDITOR ]"
+
+[node name="CloseButton" type="Button" parent="ConsoleUI/PromptOverlay/MarginContainer/VBoxContainer/HeaderRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.3, 0.3, 1)
+theme_override_colors/font_hover_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxEmpty_1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_1")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_1")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
+text = "X"
+
+[node name="PromptInput" type="TextEdit" parent="ConsoleUI/PromptOverlay/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
+theme_override_colors/caret_color = Color(0, 1, 1, 1)
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_textedit")
+theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
+placeholder_text = "Enter spaceship description..."
+wrap_mode = 1
+
+[node name="ApplyButton" type="Button" parent="ConsoleUI/PromptOverlay/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
+theme_override_colors/font_pressed_color = Color(0.5, 0.85, 0.95, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
+text = ">> APPLY <<"
