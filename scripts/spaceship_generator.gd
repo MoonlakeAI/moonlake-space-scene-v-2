@@ -14,8 +14,15 @@ const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/nimble_transport.png"
 ]
 
+const SHIP_TEXTURES: Array[String] = [
+	"res://assets/images/spaceships/military_frigate.png",
+	"res://assets/images/spaceships/mining_vessel.png",
+	"res://assets/images/spaceships/nimble_transport.png"
+]
+
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
-@onready var status_label: Label = $MarginContainer/VBoxContainer/StatusLabel
+@onready var status_label: Label = $MarginContainer/VBoxContainer/StatusRow/StatusLabel
+@onready var ship_preview: TextureRect = $MarginContainer/VBoxContainer/StatusRow/ShipPreview
 @onready var preview_container: PanelContainer = $MarginContainer/VBoxContainer/PreviewContainer
 @onready var preview_image: TextureRect = $MarginContainer/VBoxContainer/PreviewContainer/PreviewImage
 @onready var code_button: Button = $MarginContainer/VBoxContainer/TitleRow/CodeButton
@@ -40,6 +47,8 @@ var _is_generating := false
 var _current_prompt: String = DEFAULT_PROMPT
 var _progress_blocks: Array[ColorRect] = []
 var _gear_rotation: float = 0.0
+var _loaded_textures: Array[Texture2D] = []
+var _current_ship_index: int = 0
 
 
 func _ready() -> void:
@@ -80,8 +89,32 @@ func _ready() -> void:
 	prompt_overlay.visible = false
 	progress_bar.visible = false
 	
+	# Load ship textures and show initial preview
+	_load_ship_textures()
+	_select_random_ship()
+	
 	# Ensure save directory exists
 	_ensure_save_dir()
+
+
+func _load_ship_textures() -> void:
+	for path in SHIP_TEXTURES:
+		var texture = load(path) as Texture2D
+		if texture:
+			_loaded_textures.append(texture)
+
+
+func _select_random_ship() -> void:
+	if _loaded_textures.is_empty():
+		return
+	_current_ship_index = randi() % _loaded_textures.size()
+	ship_preview.texture = _loaded_textures[_current_ship_index]
+
+
+func get_current_ship_texture() -> Texture2D:
+	if _current_ship_index < _loaded_textures.size():
+		return _loaded_textures[_current_ship_index]
+	return null
 
 
 func _process(delta: float) -> void:
