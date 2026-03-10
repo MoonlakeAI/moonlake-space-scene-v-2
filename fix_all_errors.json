@@ -2,9 +2,9 @@
 	"errors": [],
 	"warnings": [
 		{
-			"message": "load: res://scenes/spaceship.tscn:5 - ext_resource, invalid UID: uid://b4sbutjn7qg3x - using text path instead: res://shaders/label_background.gdshader",
-			"source_file": "scene\\resources\\resource_format_text.cpp",
-			"source_line": 512
+			"message": "GDScript::reload: Values of the ternary operator are not mutually compatible.",
+			"source_file": "res://scripts/debug_panel.gd",
+			"source_line": 117
 		}
 	]
 }

@@ -2,22 +2,26 @@ class_name SpaceshipTraffic
 extends CanvasLayer
 
 ## Manages spaceship traffic with layered parallax effect
-## Each layer has rows - farther layers have more rows, closer layers have fewer
+## Lane 1 = closest (fastest, largest), Lane 3 = farthest (slowest, smallest)
 
 @export var spaceship_scene: PackedScene
 @export var spaceship_textures: Array[Texture2D] = []  ## Array of spaceship textures to randomly choose from
 @export var spaceship_scale: float = 0.4  ## Scale factor for spaceship sprites (adjust to fit scene)
-@export var min_ships: int = 8
-@export var max_ships: int = 14
-@export var debug_show_layers: bool = false  ## Enable to show colored layer regions
+@export var min_ships: int = 12
+@export var max_ships: int = 18
+@export var debug_show_layers: bool = false  ## Enable to show colored lane regions
 
-# Debug colors for each layer (RGBA with low alpha for transparency)
+# Debug colors for each lane (Lane 1 = closest, Lane 3 = farthest)
 var debug_colors: Array[Color] = [
-	Color(1.0, 0.0, 0.0, 0),  # Layer 0 - Red (far)
-	Color(1.0, 1.0, 0.0, 0),  # Layer 1 - Yellow (mid)
-	Color(0.0, 0.5, 1.0, 0),  # Layer 2 - Blue (close)
+	Color(0.0, 0.5, 1.0, 0.25),  # Lane 1 - Blue (closest)
+	Color(1.0, 1.0, 0.0, 0.25),  # Lane 2 - Yellow (mid)
+	Color(1.0, 0.0, 0.0, 0.25),  # Lane 3 - Red (farthest)
 ]
 var debug_rects: Array[ColorRect] = []
+
+# Spawn/despawn offset - how far off-screen ships spawn/despawn
+var spawn_offset: float = 200.0
+var despawn_offset: float = 200.0
 
 # Ship data: [name, role]
 var ship_data: Array = [
@@ -51,23 +55,27 @@ var speeds_data: Array = [
 	[1.4, 0.0, 0.0, 0.08],     # Fast accelerating - scouts
 ]
 
-# Layer configuration with rows
-# rows: array of y_position_ratios for each row in this layer
-var layers: Array = [
-	{
-		"depth": 0.3, 
-		"speed": 20.0,
-		"rows": [0.12, 0.18, 0.24, 0.30]  # Far layer - more rows for higher density
-	},
-	{
-		"depth": 0.6, 
-		"speed": 45.0,
-		"rows": [0.40, 0.45]  # Mid layer - moved up
-	},
+# Lane configuration with rows (Lane 1 = closest, Lane 3 = farthest)
+# rows: array of y_position_ratios for each row in this lane
+# variance: random Y offset in pixels for ships in this lane
+var lanes: Array = [
 	{
 		"depth": 1.0, 
 		"speed": 80.0,
-		"rows": [0.40,0.65]  # Close layer - moved down
+		"rows": [0.65],  # Lane 1 - Closest (blue) - bottom of screen
+		"variance": 0.0
+	},
+	{
+		"depth": 0.5, 
+		"speed": 45.0,
+		"rows": [0.38, 0.45],  # Lane 2 - Mid (yellow)
+		"variance": 0.0
+	},
+	{
+		"depth": 0.3, 
+		"speed": 20.0,
+		"rows": [0.12, 0.18, 0.24, 0.30],  # Lane 3 - Farthest (red) - more rows for density
+		"variance": 0.0
 	},
 ]
 
@@ -80,32 +88,37 @@ func _ready() -> void:
 		_create_debug_layer_visuals()
 
 func _create_debug_layer_visuals() -> void:
-	"""Create transparent colored rectangles to visualize each layer's row positions"""
+	"""Create transparent colored rectangles to visualize each lane's row positions"""
 	# Clear existing debug rects
 	for rect in debug_rects:
 		if is_instance_valid(rect):
 			rect.queue_free()
 	debug_rects.clear()
 	
-	var row_height: float = 60.0  # Height of each row band
+	# Use the same viewport_size that ships use to ensure alignment
+	# (Don't fetch fresh - ships were spawned with this size)
+	var current_viewport_size = viewport_size
 	
-	for layer_index in range(layers.size()):
-		var layer_config = layers[layer_index]
-		var rows: Array = layer_config["rows"]
-		var color = debug_colors[layer_index] if layer_index < debug_colors.size() else Color(1, 1, 1, 0.1)
+	var row_height: float = 40.0  # Height of each row band
+	
+	for lane_index in range(lanes.size()):
+		var lane_config = lanes[lane_index]
+		var rows: Array = lane_config["rows"]
+		var color = debug_colors[lane_index] if lane_index < debug_colors.size() else Color(1, 1, 1, 0.1)
 		
 		for row_y_ratio in rows:
 			var rect = ColorRect.new()
-			var y_pos = viewport_size.y * row_y_ratio - row_height / 2.0
+			var y_pos = current_viewport_size.y * row_y_ratio - row_height / 2.0
 			
-			rect.position = Vector2(0, y_pos)
-			rect.size = Vector2(viewport_size.x, row_height)
+			# Extend bars well beyond screen edges to ensure full coverage
+			rect.position = Vector2(-500, y_pos)
+			rect.size = Vector2(current_viewport_size.x + 2000, row_height)
 			rect.color = color
 			rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			
-			# Add label to show layer info
+			# Add label to show lane info (Lane 1 = closest)
 			var label = Label.new()
-			label.text = "L%d (d:%.2f, s:%.0f)" % [layer_index, layer_config["depth"], layer_config["speed"]]
+			label.text = "Lane %d (d:%.2f, s:%.0f)" % [lane_index + 1, lane_config["depth"], lane_config["speed"]]
 			label.position = Vector2(10, 5)
 			label.add_theme_font_size_override("font_size", 12)
 			label.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
@@ -118,7 +131,12 @@ func _create_debug_layer_visuals() -> void:
 
 func toggle_debug_layers() -> void:
 	"""Toggle debug layer visualization on/off"""
-	debug_show_layers = !debug_show_layers
+	set_debug_layers(!debug_show_layers)
+
+
+func set_debug_layers(enabled: bool) -> void:
+	"""Set debug layer visualization on/off"""
+	debug_show_layers = enabled
 	if debug_show_layers:
 		_create_debug_layer_visuals()
 	else:
@@ -127,39 +145,82 @@ func toggle_debug_layers() -> void:
 				rect.queue_free()
 		debug_rects.clear()
 
+
+func set_spawn_offset(value: float) -> void:
+	"""Set how far off-screen ships spawn"""
+	spawn_offset = value
+	print("[SpaceshipTraffic] Spawn offset set to: %.0f" % spawn_offset)
+
+
+func set_despawn_offset(value: float) -> void:
+	"""Set how far off-screen ships despawn (wrap around)"""
+	despawn_offset = value
+	# Update all existing ships with the new despawn offset
+	for child in get_children():
+		if child is Spaceship:
+			child.spawn_margin = despawn_offset
+	print("[SpaceshipTraffic] Despawn offset set to: %.0f" % despawn_offset)
+
+
+func set_lane_row_position(lane_index: int, row_index: int, y_ratio: float) -> void:
+	"""Set the Y position ratio for a specific row in a lane"""
+	if lane_index < 0 or lane_index >= lanes.size():
+		push_warning("[SpaceshipTraffic] Invalid lane index: %d" % lane_index)
+		return
+	
+	var rows: Array = lanes[lane_index]["rows"]
+	if row_index < 0 or row_index >= rows.size():
+		push_warning("[SpaceshipTraffic] Invalid row index: %d for lane %d" % [row_index, lane_index])
+		return
+	
+	lanes[lane_index]["rows"][row_index] = y_ratio
+	
+	# Refresh debug layer visuals if enabled
+	if debug_show_layers:
+		_create_debug_layer_visuals()
+	
+	print("[SpaceshipTraffic] Lane %d Row %d set to: %.2f" % [lane_index + 1, row_index + 1, y_ratio])
+
+
 func spawn_initial_ships() -> void:
 	var ship_count = randi_range(min_ships, max_ships)
+	var lane_counts = [0, 0, 0]  # Track ships per lane for debugging
 	
 	for i in range(ship_count):
-		spawn_random_ship()
+		var spawned_lane = spawn_random_ship()
+		if spawned_lane >= 0:
+			lane_counts[spawned_lane] += 1
+	
+	print("[SpaceshipTraffic] Spawned %d ships - Lane 1 (Blue): %d, Lane 2 (Yellow): %d, Lane 3 (Red): %d" % [ship_count, lane_counts[0], lane_counts[1], lane_counts[2]])
 
-func spawn_random_ship() -> void:
+func spawn_random_ship() -> int:
+	"""Spawn a random ship. Returns the lane index (0-2) or -1 on failure."""
 	if not spaceship_scene or spaceship_textures.is_empty():
 		push_warning("SpaceshipTraffic: Missing spaceship_scene or spaceship_textures")
-		return
+		return -1
 	
 	# Randomly select a texture from the array
 	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
-		return
+		return -1
 	
-	# Pick layer with weighted probability - far layer gets more ships
-	# Weights: Far=50%, Mid=35%, Close=15%
+	# Pick lane with weighted probability (Lane 1 = closest, Lane 3 = farthest)
+	# Weights: Lane 1 (closest)=25%, Lane 2 (mid)=35%, Lane 3 (far)=40%
 	var rand_val = randf()
-	var layer_index: int
-	if rand_val < 0.50:
-		layer_index = 0  # Far
-	elif rand_val < 0.85:
-		layer_index = 1  # Mid
+	var lane_index: int
+	if rand_val < 0.25:
+		lane_index = 0  # Lane 1 - Closest
+	elif rand_val < 0.60:
+		lane_index = 1  # Lane 2 - Mid
 	else:
-		layer_index = 2  # Close
+		lane_index = 2  # Lane 3 - Farthest
 	
-	var layer_config = layers[layer_index]
+	var lane_config = lanes[lane_index]
 	
-	# Pick random row within the layer
-	var rows: Array = layer_config["rows"]
+	# Pick random row within the lane
+	var rows: Array = lane_config["rows"]
 	var row_y_ratio: float = rows[randi() % rows.size()]
 	
 	# Pick random ship data
@@ -171,18 +232,20 @@ func spawn_random_ship() -> void:
 	# Random direction
 	var direction = 1 if randf() > 0.5 else -1
 	
-	# Calculate Y position from row with small variance
+	# Calculate Y position from row with lane-specific variance
 	var y_pos = viewport_size.y * row_y_ratio
-	y_pos += randf_range(-10, 10) * layer_config["depth"]
+	var lane_variance: float = lane_config.get("variance", 0.0)
+	if lane_variance > 0.0:
+		y_pos += randf_range(-lane_variance, lane_variance)
 	
 	# Random X starting position
 	var x_pos = randf_range(0, viewport_size.x)
 	
 	# Calculate final speed with multiplier
-	var base_speed = layer_config["speed"] * speed_behavior[0]
+	var base_speed = lane_config["speed"] * speed_behavior[0]
 	
 	# Setup ship with movement parameters
-	ship.setup(data[0], data[1], direction, layer_config["depth"], base_speed)
+	ship.setup(data[0], data[1], direction, lane_config["depth"], base_speed)
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)
@@ -191,9 +254,16 @@ func spawn_random_ship() -> void:
 	# Full opacity for all ships
 	ship.modulate.a = 1.0
 	
+	# Track which lane this ship belongs to
+	ship.lane_index = lane_index
+	
+	# Set despawn offset
+	ship.spawn_margin = despawn_offset
+	
 	add_child(ship)
+	return lane_index
 
-func spawn_ship_at_layer(layer_index: int, row_index: int, ship_name: String, ship_role: String) -> Spaceship:
+func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship_role: String) -> Spaceship:
 	if not spaceship_scene or spaceship_textures.is_empty():
 		return null
 	
@@ -204,33 +274,35 @@ func spawn_ship_at_layer(layer_index: int, row_index: int, ship_name: String, sh
 	if not ship:
 		return null
 	
-	layer_index = clampi(layer_index, 0, layers.size() - 1)
-	var layer_config = layers[layer_index]
+	lane_index = clampi(lane_index, 0, lanes.size() - 1)
+	var lane_config = lanes[lane_index]
 	
-	var rows: Array = layer_config["rows"]
+	var rows: Array = lane_config["rows"]
 	row_index = clampi(row_index, 0, rows.size() - 1)
 	var row_y_ratio: float = rows[row_index]
 	
 	# Pick random speed behavior
 	var speed_behavior = speeds_data[randi() % speeds_data.size()]
-	var base_speed = layer_config["speed"] * speed_behavior[0]
+	var base_speed = lane_config["speed"] * speed_behavior[0]
 	
 	var direction = 1 if randf() > 0.5 else -1
 	var y_pos = viewport_size.y * row_y_ratio
-	var x_pos: float = -200.0 if direction > 0 else viewport_size.x + 200.0
+	var x_pos: float = -spawn_offset if direction > 0 else viewport_size.x + spawn_offset
 	
-	ship.setup(ship_name, ship_role, direction, layer_config["depth"], base_speed)
+	ship.setup(ship_name, ship_role, direction, lane_config["depth"], base_speed)
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)
 	ship.apply_texture_scale(spaceship_scale)
 	ship.modulate.a = 1.0
+	ship.lane_index = lane_index
+	ship.spawn_margin = despawn_offset
 	
 	add_child(ship)
 	return ship
 
 func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D = null) -> Spaceship:
-	"""Spawn a ship from player input - spawns in the closest layer for visibility"""
+	"""Spawn a ship from player input - always spawns in Lane 1 (closest)"""
 	if not spaceship_scene:
 		return null
 	
@@ -247,22 +319,24 @@ func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D 
 	if not ship:
 		return null
 	
-	# Use the closest layer (last one) for player ships
-	var layer_config = layers[layers.size() - 1]
-	var rows: Array = layer_config["rows"]
-	var row_y_ratio: float = rows[0]
+	# Use Lane 1 (index 0) - the closest lane for player ships
+	var lane_config = lanes[0]
+	var rows: Array = lane_config["rows"]
+	var row_y_ratio: float = rows[rows.size() - 1]  # Use the bottom row of Lane 1
 	
 	# Always enter from the left, moving right
 	var direction = 1
 	var y_pos = viewport_size.y * row_y_ratio
-	var x_pos: float = -300.0
+	var x_pos: float = -spawn_offset
 	
-	ship.setup(ship_name, ship_role, direction, layer_config["depth"], layer_config["speed"])
+	ship.setup(ship_name, ship_role, direction, lane_config["depth"], lane_config["speed"])
 	ship.set_movement_behavior(0.0, 0.0, 0.0)  # Steady movement for player ships
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)
 	ship.apply_texture_scale(spaceship_scale)
 	ship.modulate.a = 1.0  # Full opacity for player ships
+	ship.lane_index = 0  # Player ships always in Lane 1 (closest)
+	ship.spawn_margin = despawn_offset
 	
 	add_child(ship)
 	return ship

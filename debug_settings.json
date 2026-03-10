@@ -1,0 +1,22 @@
+{
+	"lane_1_blue": {
+		"row_1": 0.709999999999127
+	},
+	"lane_2_yellow": {
+		"row_1": 0.420000000000073,
+		"row_2": 0.530000000000655
+	},
+	"lane_3_red": {
+		"row_1": 0.1200000000008,
+		"row_2": 0.180000000000291,
+		"row_3": 0.239999999999782,
+		"row_4": 0.299999999999272
+	},
+	"space_traffic": {
+		"show_lane_background": true
+	},
+	"spaceship": {
+		"despawn_offset": 850.0,
+		"spawn_offset": 100.0
+	}
+}

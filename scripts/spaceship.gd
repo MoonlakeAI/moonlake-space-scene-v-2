@@ -24,7 +24,8 @@ var time_alive: float = 0.0         # Time since spawn for drift calculation
 var current_speed: float = 0.0      # Actual speed (changes with acceleration)
 
 var viewport_width: float = 1920.0
-var spawn_margin: float = 400.0
+var spawn_margin: float = 200.0  # Extra distance beyond screen edges for smooth entry/exit
+var lane_index: int = -1  # Which lane this ship belongs to (0=closest/blue, 1=mid/yellow, 2=far/red)
 
 @onready var name_label: Label = $LabelContainer/VBoxContainer/NameLabel
 @onready var role_label: Label = $LabelContainer/VBoxContainer/RoleLabel
