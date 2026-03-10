@@ -1,0 +1,10 @@
+{
+	"errors": [],
+	"warnings": [
+		{
+			"message": "load: res://scenes/spaceship_traffic.tscn:4 - ext_resource, invalid UID: uid://cdu0tnrjib63w - using text path instead: res://scenes/spaceship.tscn",
+			"source_file": "scene\\resources\\resource_format_text.cpp",
+			"source_line": 512
+		}
+	]
+}

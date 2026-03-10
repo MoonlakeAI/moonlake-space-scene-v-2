@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://dt4eee5lq1h4s" path="res://scripts/preview_spaceship.gd" id="16_preview"]
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="17_holo_shader"]
 [ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="18_label_bg_shader"]
+[ext_resource type="PackedScene" path="res://scenes/spaceship_exhaust.tscn" id="19_exhaust"]
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -255,6 +256,11 @@ layer = 7
 script = ExtResource("16_preview")
 
 [node name="Sprite2D" type="Sprite2D" parent="PreviewLayer/PreviewSpaceship" unique_id=1648683760]
+
+[node name="Exhaust" parent="PreviewLayer/PreviewSpaceship" instance=ExtResource("19_exhaust")]
+position = Vector2(-65, 0)
+exhaust_size = Vector2(200, 55)
+exhaust_offset = Vector2(-100, 0)
 
 [node name="LabelContainer" type="Control" parent="PreviewLayer/PreviewSpaceship" unique_id=543052742]
 layout_mode = 3

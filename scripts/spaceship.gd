@@ -15,6 +15,9 @@ extends Node2D
 @export var label_offset_x_looking_right: float = -110.0  ## X offset when ship faces right
 @export var label_offset_x_looking_left: float = 110.0   ## X offset when ship faces left
 
+@export_group("Exhaust")
+@export var exhaust_offset_x: float = -80.0  ## X offset for exhaust (behind ship)
+
 # Non-linear movement parameters
 var drift_amplitude: float = 0.0    # Vertical sine wave drift in pixels
 var drift_frequency: float = 0.0    # How fast the drift oscillates
@@ -30,6 +33,7 @@ var lane_index: int = -1  # Which lane this ship belongs to (0=closest/blue, 1=m
 @onready var name_label: Label = $LabelContainer/VBoxContainer/NameLabel
 @onready var role_label: Label = $LabelContainer/VBoxContainer/RoleLabel
 @onready var label_container: Control = $LabelContainer
+@onready var exhaust: Node2D = $Exhaust
 
 # Store original label width for positioning
 var _label_width: float = 240.0
@@ -44,6 +48,7 @@ func _ready() -> void:
 		_label_width = label_container.offset_right - label_container.offset_left
 	
 	update_labels()
+	_update_exhaust()
 
 func _process(delta: float) -> void:
 	time_alive += delta
@@ -89,9 +94,20 @@ func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_s
 	if direction < 0:
 		scale.x *= -1
 	
-	# Update labels after setup
+	# Update labels and exhaust after setup
 	if is_inside_tree():
 		update_labels()
+		_update_exhaust()
+
+func _update_exhaust() -> void:
+	if not exhaust:
+		return
+	
+	# Position exhaust behind the ship based on direction
+	# When ship faces right (direction=1), exhaust is on the left (negative X)
+	# When ship faces left (direction=-1), the whole ship is flipped,
+	# so exhaust stays at the same local position but appears on the right
+	exhaust.position.x = exhaust_offset_x
 
 func set_movement_behavior(p_drift_amplitude: float, p_drift_frequency: float, p_acceleration: float) -> void:
 	drift_amplitude = p_drift_amplitude
@@ -135,3 +151,13 @@ func apply_texture_scale(scale_factor: float) -> void:
 	var sprite = $Sprite2D
 	if sprite:
 		sprite.scale = Vector2(scale_factor, scale_factor)
+
+func set_exhaust_intensity(value: float) -> void:
+	## Set exhaust intensity (0 = off, 1 = normal, 2+ = boost)
+	if exhaust and exhaust.has_method("set_power"):
+		exhaust.set_power(value)
+
+func boost_exhaust(duration: float = 0.5, amount: float = 2.0) -> void:
+	## Trigger a temporary exhaust boost
+	if exhaust and exhaust.has_method("boost"):
+		exhaust.boost(duration, amount)

@@ -1,8 +1,9 @@
-[gd_scene format=3 uid="uid://cdu0tnrjib63w"]
+[gd_scene format=3 uid="uid://bh1cg2eetwo4k"]
 
 [ext_resource type="Script" uid="uid://rtscgxa2lnm2" path="res://scripts/spaceship.gd" id="1_spaceship"]
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="2_shader"]
-[ext_resource type="Shader" path="res://shaders/label_background.gdshader" id="3_label_bg_shader"]
+[ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="3_label_bg_shader"]
+[ext_resource type="PackedScene" uid="uid://dg2sneb1f3kqj" path="res://scenes/spaceship_exhaust.tscn" id="4_exhaust"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_label_bg"]
 shader = ExtResource("3_label_bg_shader")
@@ -20,14 +21,19 @@ shader_parameter/glow_strength = 0.6
 shader_parameter/distortion_amount = 0.002
 shader_parameter/glitch_chance = 0.03
 
-[node name="Spaceship" type="Node2D" unique_id=975017772]
+[node name="Spaceship" type="Node2D" unique_id=941845606]
 script = ExtResource("1_spaceship")
 label_offset_x_looking_right = -180.0
 label_offset_x_looking_left = 180.0
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1149275496]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1168238838]
 
-[node name="LabelContainer" type="Control" parent="." unique_id=602022820]
+[node name="Exhaust" parent="." unique_id=1656222589 instance=ExtResource("4_exhaust")]
+position = Vector2(-50, 0)
+exhaust_size = Vector2(150, 40)
+exhaust_offset = Vector2(-75, 0)
+
+[node name="LabelContainer" type="Control" parent="." unique_id=262122931]
 layout_mode = 3
 anchors_preset = 0
 offset_left = -120.0
@@ -35,7 +41,7 @@ offset_top = -35.0
 offset_right = 120.0
 offset_bottom = 35.0
 
-[node name="Background" type="ColorRect" parent="LabelContainer" unique_id=726503520]
+[node name="Background" type="ColorRect" parent="LabelContainer" unique_id=568632038]
 material = SubResource("ShaderMaterial_label_bg")
 layout_mode = 1
 anchors_preset = 15
@@ -44,7 +50,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="LabelContainer" unique_id=780557852]
+[node name="VBoxContainer" type="VBoxContainer" parent="LabelContainer" unique_id=1639379736]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -54,7 +60,7 @@ grow_vertical = 2
 theme_override_constants/separation = 2
 alignment = 1
 
-[node name="NameLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=1429957993]
+[node name="NameLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=1755467657]
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
@@ -62,7 +68,7 @@ theme_override_font_sizes/font_size = 22
 text = "SHIP NAME"
 horizontal_alignment = 1
 
-[node name="RoleLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=465078294]
+[node name="RoleLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=1274321745]
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 0.8)

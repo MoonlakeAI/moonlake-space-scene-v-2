@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dxet6xxr2chjc"]
 
 [ext_resource type="Script" uid="uid://cyobamdt6hehc" path="res://scripts/spaceship_traffic.gd" id="1_traffic"]
-[ext_resource type="PackedScene" uid="uid://cdu0tnrjib63w" path="res://scenes/spaceship.tscn" id="2_spaceship"]
+[ext_resource type="PackedScene" path="res://scenes/spaceship.tscn" id="2_spaceship"]
 [ext_resource type="Texture2D" uid="uid://021wnoixr62x" path="res://assets/images/spaceships/military_frigate.png" id="3_military"]
 [ext_resource type="Texture2D" uid="uid://cewn3xpoahxdm" path="res://assets/images/spaceships/mining_vessel.png" id="4_mining"]
 [ext_resource type="Texture2D" uid="uid://dsc1bknwulrp3" path="res://assets/images/spaceships/nimble_transport.png" id="5_transport"]
