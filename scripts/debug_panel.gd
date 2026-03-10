@@ -28,6 +28,17 @@ func _ready() -> void:
 	_load_settings()
 	_build_ui()
 	_apply_all_settings()
+	
+	# Start hidden by default
+	visible = false
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	# Toggle visibility with Ctrl+Shift+D
+	if event is InputEventKey and event.pressed:
+		if event.keycode == KEY_D and event.ctrl_pressed and event.shift_pressed:
+			visible = !visible
+			get_viewport().set_input_as_handled()
 
 
 func _setup_references() -> void:
