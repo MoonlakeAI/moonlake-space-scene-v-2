@@ -4,6 +4,7 @@ extends PanelContainer
 ## Calls backend API to generate spaceship images and saves them locally
 
 signal image_generated(path: String)
+signal ship_selected(index: int)
 
 const SAVE_DIR := "user://generated_spaceships/"
 const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel, facing towards right, maintain the aspect ratio of the reference images"
@@ -114,6 +115,7 @@ func _select_random_ship() -> void:
 		return
 	_current_ship_index = randi() % _loaded_textures.size()
 	ship_preview.texture = _loaded_textures[_current_ship_index]
+	ship_selected.emit(_current_ship_index)
 
 
 func get_current_ship_texture() -> Texture2D:

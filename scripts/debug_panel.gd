@@ -12,6 +12,7 @@ const SETTINGS_PATH := "res://debug_settings.json"
 
 # References to other nodes (set after scene is ready)
 var _spaceship_traffic: Node = null
+var _preview_spaceship: Node = null
 
 var _settings: Dictionary = {}
 var _controls: Dictionary = {}  # Maps "group.key" to their input controls
@@ -37,6 +38,13 @@ func _setup_references() -> void:
 		_spaceship_traffic = root.get_node_or_null("SpaceshipTraffic")
 		if _spaceship_traffic:
 			print("[DebugPanel] Found SpaceshipTraffic")
+		
+		# Find preview spaceship node
+		var preview_layer = root.get_node_or_null("PreviewLayer")
+		if preview_layer:
+			_preview_spaceship = preview_layer.get_node_or_null("PreviewSpaceship")
+			if _preview_spaceship:
+				print("[DebugPanel] Found PreviewSpaceship")
 
 
 func _load_settings() -> void:
@@ -288,6 +296,9 @@ func _apply_setting(control_key: String) -> void:
 		"spaceship.despawn_offset":
 			if _spaceship_traffic:
 				_spaceship_traffic.set_despawn_offset(value)
+		"preview.position_y":
+			if _preview_spaceship and _preview_spaceship.has_method("set_position_y_ratio"):
+				_preview_spaceship.set_position_y_ratio(value)
 		_:
 			# Handle lane row settings dynamically
 			if _spaceship_traffic and control_key.begins_with("lane_"):
@@ -327,6 +338,9 @@ func _apply_setting_value(control_key: String, value: Variant) -> void:
 		"spaceship.despawn_offset":
 			if _spaceship_traffic:
 				_spaceship_traffic.set_despawn_offset(value)
+		"preview.position_y":
+			if _preview_spaceship and _preview_spaceship.has_method("set_position_y_ratio"):
+				_preview_spaceship.set_position_y_ratio(value)
 		_:
 			# Handle lane row settings dynamically
 			if _spaceship_traffic and control_key.begins_with("lane_"):

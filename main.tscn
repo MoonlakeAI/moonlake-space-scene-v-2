@@ -15,6 +15,25 @@
 [ext_resource type="Shader" uid="uid://dn6yovtkuhpqe" path="res://shaders/hangar_frame.gdshader" id="13_hangar_shader"]
 [ext_resource type="Script" path="res://scripts/spaceship_generator.gd" id="14_generator"]
 [ext_resource type="Script" path="res://scripts/debug_panel.gd" id="15_debug"]
+[ext_resource type="Script" path="res://scripts/preview_spaceship.gd" id="16_preview"]
+[ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="17_holo_shader"]
+[ext_resource type="Shader" path="res://shaders/label_background.gdshader" id="18_label_bg_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_preview_label_bg"]
+shader = ExtResource("18_label_bg_shader")
+shader_parameter/center_color = Color(0, 0.05, 0.1, 0.85)
+shader_parameter/fade_strength = 0.615
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_preview_holo"]
+shader = ExtResource("17_holo_shader")
+shader_parameter/holo_color = Color(0.2, 0.85, 1, 1)
+shader_parameter/flicker_speed = 8.0
+shader_parameter/flicker_intensity = 0.25
+shader_parameter/scanline_density = 60.0
+shader_parameter/scanline_opacity = 0.12
+shader_parameter/glow_strength = 0.6
+shader_parameter/distortion_amount = 0.0005
+shader_parameter/glitch_chance = 0.01
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -238,6 +257,57 @@ mesh = SubResource("SphereMesh_atmosphere")
 surface_material_override/0 = SubResource("Material_atmosphere")
 
 [node name="SpaceshipTraffic" parent="." unique_id=617183043 instance=ExtResource("2_traffic")]
+
+[node name="PreviewLayer" type="CanvasLayer" parent="."]
+layer = 7
+
+[node name="PreviewSpaceship" type="Node2D" parent="PreviewLayer"]
+script = ExtResource("16_preview")
+
+[node name="Sprite2D" type="Sprite2D" parent="PreviewLayer/PreviewSpaceship"]
+
+[node name="LabelContainer" type="Control" parent="PreviewLayer/PreviewSpaceship"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -120.0
+offset_top = -35.0
+offset_right = 120.0
+offset_bottom = 35.0
+
+[node name="Background" type="ColorRect" parent="PreviewLayer/PreviewSpaceship/LabelContainer"]
+material = SubResource("ShaderMaterial_preview_label_bg")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PreviewLayer/PreviewSpaceship/LabelContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="PreviewLayer/PreviewSpaceship/LabelContainer/VBoxContainer"]
+material = SubResource("ShaderMaterial_preview_holo")
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "AWAITING DESIGNATION"
+horizontal_alignment = 1
+
+[node name="RoleLabel" type="Label" parent="PreviewLayer/PreviewSpaceship/LabelContainer/VBoxContainer"]
+material = SubResource("ShaderMaterial_preview_holo")
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 0.8)
+theme_override_font_sizes/font_size = 14
+text = "Unassigned"
+horizontal_alignment = 1
 
 [node name="HangarOverlay" type="CanvasLayer" parent="." unique_id=559100088]
 layer = 10
