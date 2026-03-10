@@ -98,20 +98,22 @@ func _find_console_panel() -> void:
 	var console_ui := get_tree().root.find_child("ConsoleUI", true, false)
 	if console_ui:
 		_console_panel = console_ui.find_child("ConsolePanel", true, false)
-		if _console_panel:
-			# Get the input fields
-			_name_input = _console_panel.get_node_or_null("MarginContainer/VBoxContainer/InputsRow/NameColumn/NameInput")
-			_role_input = _console_panel.get_node_or_null("MarginContainer/VBoxContainer/InputsRow/RoleColumn/RoleInput")
+		
+		# Get the input fields from InputsPanel (sibling of ConsolePanel)
+		var inputs_panel := console_ui.find_child("InputsPanel", true, false)
+		if inputs_panel:
+			_name_input = inputs_panel.get_node_or_null("MarginContainer/InputsContainer/NameColumn/NameInput")
+			_role_input = inputs_panel.get_node_or_null("MarginContainer/InputsContainer/RoleColumn/RoleInput")
 			
 			# Connect to text_changed for real-time updates
 			if _name_input:
 				_name_input.text_changed.connect(_on_name_changed)
 			if _role_input:
 				_role_input.text_changed.connect(_on_role_changed)
-			
-			# Connect to ship_launched to reset labels after launch
-			if _console_panel.has_signal("ship_launched"):
-				_console_panel.ship_launched.connect(_on_ship_launched)
+		
+		# Connect to ship_launched to reset labels after launch
+		if _console_panel and _console_panel.has_signal("ship_launched"):
+			_console_panel.ship_launched.connect(_on_ship_launched)
 
 
 func _on_name_changed(new_text: String) -> void:

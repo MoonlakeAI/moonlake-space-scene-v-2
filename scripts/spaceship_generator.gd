@@ -134,7 +134,7 @@ func _on_generate_pressed() -> void:
 func _start_generation(prompt: String) -> void:
 	_is_generating = true
 	generate_button.disabled = true
-	generate_button.text = "GENERATING..."
+	generate_button.text = "BUILDING..."
 	_show_progress()
 	
 	var url := Config.api_url("generate-image")
@@ -178,7 +178,7 @@ func _on_generate_request_completed(result: int, response_code: int, _headers: P
 		_on_error(str(data.get("error", "Unknown error")))
 	elif status == "processing":
 		_current_job_id = str(data.get("job_id", ""))
-		generate_button.text = "GENERATING..."
+		generate_button.text = "BUILDING..."
 		_poll_timer.start()
 	elif status == "completed":
 		_on_generation_complete(data)
@@ -337,7 +337,7 @@ func _reset_state() -> void:
 	_is_generating = false
 	_current_job_id = ""
 	generate_button.disabled = false
-	generate_button.text = ">> GENERATE <<"
+	generate_button.text = ">> BUILD <<"
 	_poll_timer.stop()
 	_hide_progress()
 

@@ -5,9 +5,9 @@ extends PanelContainer
 
 signal ship_launched(ship_name: String, ship_role: String, texture: Texture2D)
 
-@onready var name_input: LineEdit = $MarginContainer/VBoxContainer/InputsRow/NameColumn/NameInput
-@onready var role_input: LineEdit = $MarginContainer/VBoxContainer/InputsRow/RoleColumn/RoleInput
-@onready var launch_button: Button = $MarginContainer/VBoxContainer/LaunchButton
+@onready var name_input: LineEdit = $"../InputsPanel/MarginContainer/InputsContainer/NameColumn/NameInput"
+@onready var role_input: LineEdit = $"../InputsPanel/MarginContainer/InputsContainer/RoleColumn/RoleInput"
+@onready var launch_button: Button = $LaunchButton
 
 # Reference to spaceship generator panel (sibling node)
 @onready var generator_panel = $"../GeneratorPanel"

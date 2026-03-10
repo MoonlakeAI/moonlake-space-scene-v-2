@@ -1,10 +1,25 @@
 {
-	"errors": [],
-	"warnings": [
+	"errors": [
 		{
-			"message": "GDScript::reload: Values of the ternary operator are not mutually compatible.",
-			"source_file": "res://scripts/debug_panel.gd",
-			"source_line": 117
+			"message": "console_panel.gd:8 @ @implicit_ready(): Node not found: \"MarginContainer/VBoxContainer/InputsRow/InputsMargin/InputsContainer/NameColumn/NameInput\" (relative to \"/root/Main/ConsoleUI/ConsolePanel\").",
+			"source_file": "res://scripts/console_panel.gd",
+			"source_line": 8
+		},
+		{
+			"message": "console_panel.gd:9 @ @implicit_ready(): Node not found: \"MarginContainer/VBoxContainer/InputsRow/InputsMargin/InputsContainer/RoleColumn/RoleInput\" (relative to \"/root/Main/ConsoleUI/ConsolePanel\").",
+			"source_file": "res://scripts/console_panel.gd",
+			"source_line": 9
+		},
+		{
+			"message": "console_panel.gd:10 @ @implicit_ready(): Node not found: \"MarginContainer/VBoxContainer/InputsRow/LaunchButton\" (relative to \"/root/Main/ConsoleUI/ConsolePanel\").",
+			"source_file": "res://scripts/console_panel.gd",
+			"source_line": 10
+		},
+		{
+			"message": "_ready: Invalid access to property or key 'pressed' on a base object of type 'null instance'.",
+			"source_file": "res://scripts/console_panel.gd",
+			"source_line": 16
 		}
-	]
+	],
+	"warnings": []
 }
