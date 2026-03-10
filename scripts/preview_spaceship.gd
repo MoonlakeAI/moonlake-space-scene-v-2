@@ -36,7 +36,7 @@ const BOB_SPEED: float = 0.2  ## Cycles per second (slow and dreamy)
 # Dock animation parameters
 @export var dock_delay: float = 1.0  ## Delay before next ship arrives
 @export var dock_enter_offset: float = 400.0  ## How far off-screen the next ship starts
-@export var dock_duration: float = 2.5  ## Duration of dock-in animation (slow approach)
+@export var dock_duration: float = 4.0  ## Duration of dock-in animation (slow approach)
 @export var settle_duration: float = 1.2  ## Duration of descent to dock
 
 @onready var sprite: Sprite2D = $Sprite2D
