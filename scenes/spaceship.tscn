@@ -2,6 +2,12 @@
 
 [ext_resource type="Script" uid="uid://rtscgxa2lnm2" path="res://scripts/spaceship.gd" id="1_spaceship"]
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="2_shader"]
+[ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="3_label_bg_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_label_bg"]
+shader = ExtResource("3_label_bg_shader")
+shader_parameter/center_color = Color(0, 0.05, 0.1, 0.85)
+shader_parameter/fade_strength = 0.6150000054625
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_holo"]
 shader = ExtResource("2_shader")
@@ -24,27 +30,41 @@ label_offset_x_looking_left = 180.0
 [node name="LabelContainer" type="Control" parent="." unique_id=602022820]
 layout_mode = 3
 anchors_preset = 0
-offset_left = -109.725
-offset_top = -27.65
-offset_right = 130.27484
-offset_bottom = 32.35
+offset_left = -120.0
+offset_top = -35.0
+offset_right = 120.0
+offset_bottom = 35.0
 
-[node name="NameLabel" type="Label" parent="LabelContainer" unique_id=1429957993]
+[node name="Background" type="ColorRect" parent="LabelContainer" unique_id=726503520]
+material = SubResource("ShaderMaterial_label_bg")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="LabelContainer" unique_id=780557852]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="NameLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=1429957993]
 material = SubResource("ShaderMaterial_holo")
-layout_mode = 0
-offset_right = 240.0
-offset_bottom = 30.0
+layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
 theme_override_font_sizes/font_size = 22
 text = "SHIP NAME"
 horizontal_alignment = 1
 
-[node name="RoleLabel" type="Label" parent="LabelContainer" unique_id=465078294]
+[node name="RoleLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=465078294]
 material = SubResource("ShaderMaterial_holo")
-layout_mode = 0
-offset_top = 28.0
-offset_right = 240.0
-offset_bottom = 50.0
+layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 0.8)
 theme_override_font_sizes/font_size = 14
 text = "Role"

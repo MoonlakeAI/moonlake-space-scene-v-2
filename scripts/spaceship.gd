@@ -26,8 +26,8 @@ var current_speed: float = 0.0      # Actual speed (changes with acceleration)
 var viewport_width: float = 1920.0
 var spawn_margin: float = 400.0
 
-@onready var name_label: Label = $LabelContainer/NameLabel
-@onready var role_label: Label = $LabelContainer/RoleLabel
+@onready var name_label: Label = $LabelContainer/VBoxContainer/NameLabel
+@onready var role_label: Label = $LabelContainer/VBoxContainer/RoleLabel
 @onready var label_container: Control = $LabelContainer
 
 # Store original label width for positioning

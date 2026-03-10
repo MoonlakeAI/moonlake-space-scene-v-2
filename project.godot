@@ -28,7 +28,6 @@ enabled=PackedStringArray("res://addons/moonlake_copilot/plugin.cfg", "res://add
 general/project_type="3d"
 ui/chat_input_height=386.0
 agent_behavior/escape_key_stops_agent=true
-ui/simplified_ui=true
 
 [physics]
 
