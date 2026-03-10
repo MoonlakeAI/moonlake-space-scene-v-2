@@ -11,6 +11,6 @@ func _ready() -> void:
 	if console_panel.has_signal("ship_launched"):
 		console_panel.ship_launched.connect(_on_ship_launched)
 
-func _on_ship_launched(ship_name: String, ship_role: String) -> void:
+func _on_ship_launched(ship_name: String, ship_role: String, texture: Texture2D) -> void:
 	if spaceship_traffic:
-		spaceship_traffic.spawn_player_ship(ship_name, ship_role)
+		spaceship_traffic.spawn_player_ship(ship_name, ship_role, texture)

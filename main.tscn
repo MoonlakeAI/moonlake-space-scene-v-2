@@ -496,6 +496,35 @@ color = Color(0.15, 0.3, 0.35, 0.5)
 layout_mode = 2
 size_flags_vertical = 3
 
+[node name="PreviewSection" type="VBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="PreviewHeader" type="Button" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/PreviewSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.65, 0.7, 0.9)
+theme_override_colors/font_pressed_color = Color(0.5, 0.85, 0.95, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 10
+theme_override_styles/normal = SubResource("StyleBoxEmpty_1")
+theme_override_styles/pressed = SubResource("StyleBoxEmpty_1")
+theme_override_styles/hover = SubResource("StyleBoxEmpty_1")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
+text = "▼ PREVIEW"
+
+[node name="PreviewContainer" type="PanelContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/PreviewSection"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_preview")
+
+[node name="PreviewImage" type="TextureRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/PreviewSection/PreviewContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
+
 [node name="GenerateButton" type="Button" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
@@ -507,19 +536,6 @@ theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
 text = ">> GENERATE <<"
-
-[node name="PreviewContainer" type="PanelContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
-visible = false
-custom_minimum_size = Vector2(0, 140)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_preview")
-
-[node name="PreviewImage" type="TextureRect" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/PreviewContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-expand_mode = 1
-stretch_mode = 5
 
 [node name="PromptOverlay" type="PanelContainer" parent="ConsoleUI"]
 visible = false

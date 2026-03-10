@@ -229,13 +229,19 @@ func spawn_ship_at_layer(layer_index: int, row_index: int, ship_name: String, sh
 	add_child(ship)
 	return ship
 
-func spawn_player_ship(ship_name: String, ship_role: String) -> Spaceship:
+func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D = null) -> Spaceship:
 	"""Spawn a ship from player input - spawns in the closest layer for visibility"""
-	if not spaceship_scene or spaceship_textures.is_empty():
+	if not spaceship_scene:
 		return null
 	
-	# Randomly select a texture from the array
-	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
+	# Use provided texture, or fall back to random from array
+	var selected_texture: Texture2D = texture
+	if selected_texture == null and not spaceship_textures.is_empty():
+		selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
+	
+	if selected_texture == null:
+		push_warning("SpaceshipTraffic: No texture available for player ship")
+		return null
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:

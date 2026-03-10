@@ -3,11 +3,14 @@ extends PanelContainer
 ## Console Panel for crew deployment
 ## Handles input and launches new ships
 
-signal ship_launched(ship_name: String, ship_role: String)
+signal ship_launched(ship_name: String, ship_role: String, texture: Texture2D)
 
 @onready var name_input: LineEdit = $MarginContainer/VBoxContainer/InputsRow/NameColumn/NameInput
 @onready var role_input: LineEdit = $MarginContainer/VBoxContainer/InputsRow/RoleColumn/RoleInput
 @onready var launch_button: Button = $MarginContainer/VBoxContainer/LaunchButton
+
+# Reference to spaceship generator panel (sibling node)
+@onready var generator_panel = $"../GeneratorPanel"
 
 func _ready() -> void:
 	launch_button.pressed.connect(_on_launch_pressed)
@@ -32,8 +35,13 @@ func launch_ship() -> void:
 	if ship_role.is_empty():
 		ship_role = "Unassigned"
 	
+	# Get the generated texture from spaceship generator
+	var texture: Texture2D = null
+	if generator_panel and generator_panel.has_method("get_generated_texture"):
+		texture = generator_panel.get_generated_texture()
+	
 	# Emit signal for traffic manager to handle
-	ship_launched.emit(ship_name, ship_role)
+	ship_launched.emit(ship_name, ship_role, texture)
 	
 	# Clear inputs
 	name_input.clear()

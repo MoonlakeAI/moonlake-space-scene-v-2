@@ -23,8 +23,10 @@ const SHIP_TEXTURES: Array[String] = [
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
 @onready var status_label: Label = $MarginContainer/VBoxContainer/StatusRow/StatusLabel
 @onready var ship_preview: TextureRect = $MarginContainer/VBoxContainer/StatusRow/ShipPreview
-@onready var preview_container: PanelContainer = $MarginContainer/VBoxContainer/PreviewContainer
-@onready var preview_image: TextureRect = $MarginContainer/VBoxContainer/PreviewContainer/PreviewImage
+@onready var preview_section: VBoxContainer = $MarginContainer/VBoxContainer/PreviewSection
+@onready var preview_header: Button = $MarginContainer/VBoxContainer/PreviewSection/PreviewHeader
+@onready var preview_container: PanelContainer = $MarginContainer/VBoxContainer/PreviewSection/PreviewContainer
+@onready var preview_image: TextureRect = $MarginContainer/VBoxContainer/PreviewSection/PreviewContainer/PreviewImage
 @onready var code_button: Button = $MarginContainer/VBoxContainer/TitleRow/CodeButton
 @onready var progress_bar: HBoxContainer = $MarginContainer/VBoxContainer/ProgressBar
 
@@ -49,6 +51,8 @@ var _progress_blocks: Array[ColorRect] = []
 var _gear_rotation: float = 0.0
 var _loaded_textures: Array[Texture2D] = []
 var _current_ship_index: int = 0
+var _preview_collapsed: bool = false
+var _generated_texture: Texture2D = null
 
 
 func _ready() -> void:
@@ -72,6 +76,7 @@ func _ready() -> void:
 	code_button.pressed.connect(_on_code_button_pressed)
 	close_button.pressed.connect(_on_close_overlay)
 	apply_button.pressed.connect(_on_apply_prompt)
+	preview_header.pressed.connect(_toggle_preview)
 	
 	# Cache progress bar blocks
 	for child in progress_bar.get_children():
@@ -84,8 +89,8 @@ func _ready() -> void:
 	# Set default prompt
 	prompt_input.text = _current_prompt
 	
-	# Hide preview, overlay, and progress bar initially
-	preview_container.visible = false
+	# Hide preview section, overlay, and progress bar initially
+	preview_section.visible = false
 	prompt_overlay.visible = false
 	progress_bar.visible = false
 	
@@ -382,8 +387,20 @@ func _show_preview(image_bytes: PackedByteArray) -> void:
 	
 	# Create texture from image
 	var texture := ImageTexture.create_from_image(image)
+	_generated_texture = texture  # Store for Crew Deployment to use
+	
 	preview_image.texture = texture
 	preview_container.visible = true
+	
+	# Show the preview section (collapsible)
+	preview_section.visible = true
+	_preview_collapsed = false
+	preview_header.text = "▼ Generated Preview"
+	
+	# Update the ship preview next to "Ready For Deployment"
+	ship_preview.texture = texture
+	status_label.text = "Ready For Deployment"
+	
 	print("[SpaceshipGenerator] Preview texture set, size: ", preview_image.size)
 
 
@@ -405,3 +422,21 @@ func _play_success_effect() -> void:
 	var tween := create_tween()
 	generate_button.modulate = Color(0.5, 1.0, 0.8, 1.0)
 	tween.tween_property(generate_button, "modulate", Color.WHITE, 0.4)
+
+
+func _toggle_preview() -> void:
+	_preview_collapsed = !_preview_collapsed
+	preview_container.visible = !_preview_collapsed
+	
+	# Update header text with arrow indicator
+	if _preview_collapsed:
+		preview_header.text = "▶ Generated Preview"
+	else:
+		preview_header.text = "▼ Generated Preview"
+
+
+## Returns the currently generated texture (or current ship texture if none generated)
+func get_generated_texture() -> Texture2D:
+	if _generated_texture != null:
+		return _generated_texture
+	return get_current_ship_texture()
