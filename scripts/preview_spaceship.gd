@@ -50,6 +50,7 @@ var _console_panel: PanelContainer
 var _name_input: LineEdit
 var _role_input: OptionButton
 var _loaded_textures: Array[Texture2D] = []
+var _hangar_frame_material: ShaderMaterial  ## Reference to hangar frame shader material
 var _current_index: int = 0
 var _position_y_ratio: float = 0.9  ## Y position as ratio of screen height (0.9 = 90% from top)
 var _bob_time: float = 0.0
@@ -88,6 +89,7 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_find_generator_panel()
 	_find_console_panel()
+	_find_hangar_frame()
 	_sync_texture()
 
 
@@ -151,6 +153,21 @@ func _find_console_panel() -> void:
 				_role_input.item_selected.connect(_on_role_changed)
 
 
+func _find_hangar_frame() -> void:
+	## Find the HangarFrame node and get its shader material for launch effects
+	var hangar_overlay := get_tree().root.find_child("HangarOverlay", true, false)
+	if hangar_overlay:
+		var hangar_frame := hangar_overlay.find_child("HangarFrame", true, false)
+		if hangar_frame and hangar_frame is CanvasItem:
+			_hangar_frame_material = hangar_frame.material as ShaderMaterial
+
+
+func _set_hangar_launch_progress(progress: float) -> void:
+	## Set the launch_progress shader parameter on the hangar frame
+	if _hangar_frame_material:
+		_hangar_frame_material.set_shader_parameter("launch_progress", progress)
+
+
 func _on_name_changed(new_text: String) -> void:
 	# Only update labels during IDLE state
 	if _state != State.IDLE:
@@ -204,10 +221,13 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	_launch_tween.set_trans(Tween.TRANS_QUAD)
 	
 	# Phase 1: Lift up (sprite moves up relative to base)
+	# Also transition hangar frame from cyan to yellow
 	var lift_target_y := -lift_amount + current_bob
 	_launch_tween.tween_property(sprite, "position:y", lift_target_y, lift_duration)
 	if label_container:
 		_launch_tween.parallel().tween_property(label_container, "position:y", label_offset_y + lift_target_y, lift_duration)
+	# Transition hangar frame to launch mode (cyan -> yellow)
+	_launch_tween.parallel().tween_method(_set_hangar_launch_progress, 0.0, 1.0, lift_duration)
 	
 	# Phase 2: Accelerate to the left (exponential feel)
 	var exit_x := -launch_exit_offset
@@ -285,9 +305,11 @@ func _dock_next_ship() -> void:
 	_dock_tween.tween_property(self, "position:x", _base_position.x, dock_duration)
 	
 	# Phase 2: Descend to dock position (move down gently)
+	# Also transition hangar frame back from yellow to cyan
 	_dock_tween.set_ease(Tween.EASE_IN_OUT)
 	_dock_tween.set_trans(Tween.TRANS_SINE)
 	_dock_tween.tween_property(self, "position:y", _base_position.y, settle_duration)
+	_dock_tween.parallel().tween_method(_set_hangar_launch_progress, 1.0, 0.0, 2.0)  # 2 second transition back to cyan
 	
 	# On completion, return to IDLE state
 	_dock_tween.tween_callback(_on_dock_animation_finished)
