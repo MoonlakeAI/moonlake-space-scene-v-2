@@ -2,13 +2,13 @@ shader_type canvas_item;
 
 // Holographic flickering text shader
 
-uniform vec4 holo_color : source_color = vec4(0.2, 0.8, 1.0, 1.0);
-uniform float flicker_speed : hint_range(1.0, 20.0) = 8.0;
-uniform float flicker_intensity : hint_range(0.0, 1.0) = 0.3;
-uniform float scanline_density : hint_range(10.0, 200.0) = 80.0;
-uniform float scanline_opacity : hint_range(0.0, 1.0) = 0.15;
-uniform float glow_strength : hint_range(0.0, 2.0) = 0.5;
-uniform float distortion_amount : hint_range(0.0, 0.02) = 0.003;
+uniform vec4 holo_color : source_color = vec4(0.2, 0.8, 0.8, 9.0);
+uniform float flicker_speed : hint_range(1.0, 20.0) = 20.0;
+uniform float flicker_intensity : hint_range(0.0, 1.0) = 0.1;
+uniform float scanline_density : hint_range(10.0, 200.0) = 10.0;
+uniform float scanline_opacity : hint_range(0.0, 1.0) = 0.1;
+uniform float glow_strength : hint_range(0.0, 2.0) = 1;
+uniform float distortion_amount : hint_range(0.0, 0.02) = 0.001;
 uniform float glitch_chance : hint_range(0.0, 1.0) = 0.05;
 
 // Random function
@@ -27,7 +27,7 @@ void fragment() {
     }
     
     // Subtle horizontal distortion
-    uv.x += sin(uv.y * 50.0 + time * 5.0) * distortion_amount;
+    //uv.x += sin(uv.y * 50.0 + time * 5.0) * distortion_amount;
     
     // Sample the texture
     vec4 tex_color = texture(TEXTURE, uv);

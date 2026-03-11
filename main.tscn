@@ -83,8 +83,8 @@ shader_parameter/flicker_speed = 8.0
 shader_parameter/flicker_intensity = 0.25
 shader_parameter/scanline_density = 60.0
 shader_parameter/scanline_opacity = 0.12
-shader_parameter/glow_strength = 0.6
-shader_parameter/distortion_amount = 0.0005
+shader_parameter/glow_strength = 0.9
+shader_parameter/distortion_amount = 0.0001
 shader_parameter/glitch_chance = 0.01
 
 [sub_resource type="ShaderMaterial" id="Material_hangar"]
@@ -96,6 +96,11 @@ shader_parameter/flicker_intensity = 0.25
 shader_parameter/cyan_hue_min = 0.4
 shader_parameter/cyan_hue_max = 0.58
 shader_parameter/saturation_threshold = 0.15
+shader_parameter/launch_progress = 0.0
+shader_parameter/yellow_hue = 0.12
+shader_parameter/siren_speed = 0.5
+shader_parameter/siren_min_brightness = 0.8
+shader_parameter/siren_max_brightness = 1.1
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
 bg_color = Color(0, 0.04, 0.07, 0.7)
