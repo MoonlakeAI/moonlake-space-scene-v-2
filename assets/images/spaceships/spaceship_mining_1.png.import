@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dsc1bknwulrp3"
-path="res://.godot/imported/nimble_transport.png-a738c36db1ba698a38e854d9979afebd.ctex"
+uid="uid://dafhuu5lx5mvr"
+path="res://.godot/imported/spaceship_mining_1.png-60853b751daf4fa00678e08427bdec1a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/spaceships/nimble_transport.png"
-dest_files=["res://.godot/imported/nimble_transport.png-a738c36db1ba698a38e854d9979afebd.ctex"]
+source_file="res://assets/images/spaceships/spaceship_mining_1.png"
+dest_files=["res://.godot/imported/spaceship_mining_1.png-60853b751daf4fa00678e08427bdec1a.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

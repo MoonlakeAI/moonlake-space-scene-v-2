@@ -12,9 +12,9 @@ signal dock_completed
 enum State { IDLE, LAUNCHING, DOCKING }
 
 const SHIP_TEXTURES: Array[String] = [
-	"res://assets/images/spaceships/military_frigate.png",
-	"res://assets/images/spaceships/mining_vessel.png",
-	"res://assets/images/spaceships/nimble_transport.png"
+	"res://assets/images/spaceships/spaceship_military_1.png",
+	"res://assets/images/spaceships/spaceship_mining_1.png",
+	"res://assets/images/spaceships/spaceship_transport_1.png"
 ]
 
 const DEFAULT_NAME := ""

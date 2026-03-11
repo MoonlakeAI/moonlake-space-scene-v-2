@@ -1,16 +1,55 @@
 {
 	"errors": [
 		{
-			"message": "thread_func: WASAPI: GetBufferSize error",
-			"source_file": "drivers\\wasapi\\audio_driver_wasapi.cpp",
-			"source_line": 778
+			"message": "_load: Resource file not found: res://assets/images/spaceships/military_frigate.png (expected type: Texture2D)",
+			"source_file": "core\\io\\resource_loader.cpp",
+			"source_line": 351
+		},
+		{
+			"message": "_load: Resource file not found: res://assets/images/spaceships/mining_vessel.png (expected type: Texture2D)",
+			"source_file": "core\\io\\resource_loader.cpp",
+			"source_line": 351
+		},
+		{
+			"message": "_load: Resource file not found: res://assets/images/spaceships/nimble_transport.png (expected type: Texture2D)",
+			"source_file": "core\\io\\resource_loader.cpp",
+			"source_line": 351
+		},
+		{
+			"message": "_printerr: res://scenes/spaceship_traffic.tscn:13 - Parse Error: [ext_resource] referenced non-existent resource at: res://assets/images/spaceships/military_frigate.png.",
+			"source_file": "scene\\resources\\resource_format_text.cpp",
+			"source_line": 40
+		},
+		{
+			"message": "preview_spaceship.gd:116 @ _load_ship_textures(): Resource file not found: res://assets/images/spaceships/military_frigate.png (expected type: unknown)",
+			"source_file": "res://scripts/preview_spaceship.gd",
+			"source_line": 116
+		},
+		{
+			"message": "preview_spaceship.gd:116 @ _load_ship_textures(): Resource file not found: res://assets/images/spaceships/mining_vessel.png (expected type: unknown)",
+			"source_file": "res://scripts/preview_spaceship.gd",
+			"source_line": 116
+		},
+		{
+			"message": "preview_spaceship.gd:116 @ _load_ship_textures(): Resource file not found: res://assets/images/spaceships/nimble_transport.png (expected type: unknown)",
+			"source_file": "res://scripts/preview_spaceship.gd",
+			"source_line": 116
+		},
+		{
+			"message": "spaceship_generator.gd:110 @ _load_ship_textures(): Resource file not found: res://assets/images/spaceships/military_frigate.png (expected type: unknown)",
+			"source_file": "res://scripts/spaceship_generator.gd",
+			"source_line": 110
+		},
+		{
+			"message": "spaceship_generator.gd:110 @ _load_ship_textures(): Resource file not found: res://assets/images/spaceships/mining_vessel.png (expected type: unknown)",
+			"source_file": "res://scripts/spaceship_generator.gd",
+			"source_line": 110
+		},
+		{
+			"message": "spaceship_generator.gd:110 @ _load_ship_textures(): Resource file not found: res://assets/images/spaceships/nimble_transport.png (expected type: unknown)",
+			"source_file": "res://scripts/spaceship_generator.gd",
+			"source_line": 110
 		}
 	],
-	"warnings": [
-		{
-			"message": "thread_func: WASAPI: Current output_device invalidated, closing output_device",
-			"source_file": "drivers\\wasapi\\audio_driver_wasapi.cpp",
-			"source_line": 849
-		}
-	]
+	"warnings": []
 }
