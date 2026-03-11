@@ -390,34 +390,25 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
 [node name="RoleInput" type="OptionButton" parent="ConsoleUI/InputsPanel/MarginContainer/InputsContainer/RoleColumn" unique_id=1579519736]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 31)
+layout_mode = 2
 theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 1)
-theme_override_colors/font_hover_color = Color(0.6, 0.85, 0.9, 1)
-theme_override_colors/font_pressed_color = Color(0.7, 0.95, 1, 1)
 theme_override_colors/font_focus_color = Color(0.6, 0.85, 0.9, 1)
+theme_override_colors/font_pressed_color = Color(0.7, 0.95, 1, 1)
+theme_override_colors/font_hover_color = Color(0.6, 0.85, 0.9, 1)
 theme_override_styles/normal = SubResource("StyleBoxFlat_input")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_input_focus")
-popup/item_count = 4
-popup/item_0/text = "Design"
-popup/item_1/text = "Engineering"
-popup/item_1/id = 1
-popup/item_2/text = "Creative"
-popup/item_2/id = 2
-popup/item_3/text = "Production"
-popup/item_3/id = 3
 
 [node name="GeneratorPanel" type="PanelContainer" parent="ConsoleUI" unique_id=864754078]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = -140.0
+offset_top = -220.0
 offset_right = 340.0
 offset_bottom = -20.0
-grow_horizontal = 1
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 script = ExtResource("14_generator")
@@ -447,6 +438,23 @@ theme_override_constants/shadow_offset_x = 0
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 13
 text = "[ BLUEPRINT ]"
+
+[node name="ReferenceLabel" type="Label" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.6, 0.7, 0.8)
+theme_override_font_sizes/font_size = 10
+text = "REFERENCE:"
+
+[node name="ReferenceScroll" type="ScrollContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+horizontal_scroll_mode = 2
+vertical_scroll_mode = 0
+
+[node name="ReferenceContainer" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ReferenceScroll"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 6
 
 [node name="PromptInput" type="TextEdit" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=1853885926]
 custom_minimum_size = Vector2(0, 60)

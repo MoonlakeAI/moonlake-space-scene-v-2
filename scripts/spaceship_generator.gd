@@ -12,7 +12,13 @@ const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metal
 const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/military_frigate.png",
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/mining_vessel.png",
-	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/nimble_transport.png"
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/nimble_transport.png",
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_3.png",
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_1.png",
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_2.png",
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_1.png",
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_2.png",
+	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_3.png"
 ]
 
 const SHIP_TEXTURES: Array[String] = [
@@ -24,6 +30,7 @@ const SHIP_TEXTURES: Array[String] = [
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
 @onready var prompt_input: TextEdit = $MarginContainer/VBoxContainer/PromptInput
 @onready var progress_bar: HBoxContainer = $MarginContainer/VBoxContainer/ProgressBar
+@onready var reference_container: HBoxContainer = $MarginContainer/VBoxContainer/ReferenceScroll/ReferenceContainer
 
 # Progress bar colors
 const COLOR_FILLED := Color(0.3, 0.7, 0.8, 1.0)
@@ -38,6 +45,16 @@ var _progress_blocks: Array[ColorRect] = []
 var _loaded_textures: Array[Texture2D] = []
 var _current_ship_index: int = 0
 var _generated_texture: Texture2D = null
+
+# Reference selector state
+var _reference_buttons: Array[TextureButton] = []
+var _selected_reference_index: int = 0
+var _reference_download_queue: Array = []
+var _reference_textures: Array[Texture2D] = []
+
+const THUMB_SIZE := Vector2(60, 40)
+const SELECTED_COLOR := Color(0, 0.8, 1, 1)
+const UNSELECTED_COLOR := Color(0.5, 0.6, 0.7, 0.6)
 
 
 func _ready() -> void:
@@ -76,6 +93,12 @@ func _ready() -> void:
 	
 	# Ensure save directory exists
 	_ensure_save_dir()
+	
+	# Create reference selector buttons
+	_create_reference_buttons()
+	
+	# Start loading reference images
+	_start_loading_references()
 
 
 func _load_ship_textures() -> void:
@@ -120,6 +143,120 @@ func _ensure_save_dir() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(SAVE_DIR))
 
 
+func _create_reference_buttons() -> void:
+	# Clear existing buttons
+	for child in reference_container.get_children():
+		child.queue_free()
+	_reference_buttons.clear()
+	_reference_textures.clear()
+	
+	# Create a button for each reference image
+	for i in range(REFERENCE_IMAGES.size()):
+		var btn := TextureButton.new()
+		btn.custom_minimum_size = THUMB_SIZE
+		btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		btn.ignore_texture_size = true
+		
+		# Add border panel behind button
+		var panel := PanelContainer.new()
+		panel.custom_minimum_size = THUMB_SIZE + Vector2(4, 4)
+		
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color(0, 0.05, 0.1, 0.8)
+		style.border_color = UNSELECTED_COLOR
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(3)
+		panel.add_theme_stylebox_override("panel", style)
+		
+		# Center the button in the panel
+		var center := CenterContainer.new()
+		center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		panel.add_child(center)
+		center.add_child(btn)
+		
+		reference_container.add_child(panel)
+		_reference_buttons.append(btn)
+		_reference_textures.append(null)
+		
+		# Connect click handler
+		var index := i
+		btn.pressed.connect(func(): _on_reference_selected(index))
+	
+	# Select first by default
+	_update_reference_selection(0)
+
+
+func _start_loading_references() -> void:
+	_reference_download_queue = REFERENCE_IMAGES.duplicate()
+	_load_next_reference()
+
+
+func _load_next_reference() -> void:
+	if _reference_download_queue.is_empty():
+		return
+	
+	var url: String = _reference_download_queue.pop_front()
+	var index := REFERENCE_IMAGES.find(url)
+	
+	var http := HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(
+		func(result: int, code: int, _headers: PackedStringArray, body: PackedByteArray):
+			_on_reference_image_loaded(result, code, body, index)
+			http.queue_free()
+			# Load next image
+			_load_next_reference()
+	)
+	http.request(url)
+
+
+func _on_reference_image_loaded(result: int, code: int, body: PackedByteArray, index: int) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS or code != 200:
+		print("[SpaceshipGenerator] Failed to load reference %d" % index)
+		return
+	
+	if index < 0 or index >= _reference_buttons.size():
+		return
+	
+	# Load image from bytes
+	var image := Image.new()
+	var error := image.load_png_from_buffer(body)
+	if error != OK:
+		print("[SpaceshipGenerator] Failed to decode reference image %d" % index)
+		return
+	
+	# Create texture and assign to button
+	var texture := ImageTexture.create_from_image(image)
+	_reference_textures[index] = texture
+	_reference_buttons[index].texture_normal = texture
+
+
+func _on_reference_selected(index: int) -> void:
+	_update_reference_selection(index)
+
+
+func _update_reference_selection(index: int) -> void:
+	_selected_reference_index = index
+	
+	# Update visual state of all buttons
+	for i in range(_reference_buttons.size()):
+		var btn := _reference_buttons[i]
+		var panel := btn.get_parent().get_parent() as PanelContainer
+		if panel:
+			var style := panel.get_theme_stylebox("panel") as StyleBoxFlat
+			if style:
+				var new_style := style.duplicate() as StyleBoxFlat
+				if i == index:
+					new_style.border_color = SELECTED_COLOR
+					new_style.shadow_color = Color(0, 0.6, 0.8, 0.5)
+					new_style.shadow_size = 4
+				else:
+					new_style.border_color = UNSELECTED_COLOR
+					new_style.shadow_size = 0
+				panel.add_theme_stylebox_override("panel", new_style)
+
+
 func _on_generate_pressed() -> void:
 	if _is_generating:
 		return
@@ -138,10 +275,16 @@ func _start_generation(prompt: String) -> void:
 	_show_progress()
 	
 	var url := Config.api_url("generate-image")
+	
+	# Use only the selected reference image
+	var selected_refs: Array[String] = []
+	if _selected_reference_index >= 0 and _selected_reference_index < REFERENCE_IMAGES.size():
+		selected_refs.append(REFERENCE_IMAGES[_selected_reference_index])
+	
 	var body := JSON.stringify({
 		"prompt": prompt,
 		"aspect_ratio": "16:9",
-		"reference_images": REFERENCE_IMAGES,
+		"reference_images": selected_refs,
 		"remove_background": true
 	})
 	
