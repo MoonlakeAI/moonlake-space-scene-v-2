@@ -1,0 +1,15 @@
+{
+	"errors": [],
+	"warnings": [
+		{
+			"message": "GDScript::reload: The local variable \"sprite\" is shadowing an already-declared variable at line 70 in the current class.",
+			"source_file": "res://scripts/spaceship.gd",
+			"source_line": 530
+		},
+		{
+			"message": "GDScript::reload: The local variable \"sprite\" is shadowing an already-declared variable at line 70 in the current class.",
+			"source_file": "res://scripts/spaceship.gd",
+			"source_line": 536
+		}
+	]
+}

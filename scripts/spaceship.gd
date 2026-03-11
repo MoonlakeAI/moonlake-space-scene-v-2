@@ -232,11 +232,12 @@ func _start_activity_light_speed_jump() -> void:
 		var scaled_down = _original_sprite_scale * 0.7
 		_activity_tween.parallel().tween_property(sprite, "scale", scaled_down, 0.1)
 	
-	# Create gradient trail ColorRect at jump start position
-	_activity_tween.tween_callback(_create_gradient_trail.bind(jump_start_x, jump_target_x))
+	# Create gradient trail ColorRect at jump start position (starts with zero width)
+	_activity_tween.tween_callback(_create_gradient_trail.bind(jump_start_x))
 	
 	# Phase 3: JUMP! Rapidly move to end of lane (0.25 seconds)
-	_activity_tween.tween_property(self, "position:x", jump_target_x, 0.25).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_EXPO)
+	# Use tween_method to animate position AND update trail simultaneously
+	_activity_tween.tween_method(_animate_jump_with_trail.bind(jump_start_x, jump_target_x), 0.0, 1.0, 0.25).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_EXPO)
 	_activity_tween.parallel().tween_method(_set_shader_param.bind("flash_intensity"), 1.0, 0.0, 0.25)
 	_activity_tween.parallel().tween_method(_set_shader_param.bind("glow_intensity"), 2.5, 1.0, 0.25)
 	
@@ -282,8 +283,8 @@ func _set_shader_param(value: float, param_name: String) -> void:
 		_lightspeed_shader.set_shader_parameter(param_name, value)
 
 
-func _create_gradient_trail(start_x: float, end_x: float) -> void:
-	"""Create a ColorRect gradient trail from start to end position."""
+func _create_gradient_trail(start_x: float) -> void:
+	"""Create a ColorRect gradient trail starting at zero width (grows with ship movement)."""
 	# Remove any existing trail
 	if _lightspeed_trail and is_instance_valid(_lightspeed_trail):
 		_lightspeed_trail.queue_free()
@@ -291,19 +292,16 @@ func _create_gradient_trail(start_x: float, end_x: float) -> void:
 	# Create ColorRect for trail
 	_lightspeed_trail = ColorRect.new()
 	
-	# Calculate trail dimensions
-	var trail_width = absf(end_x - start_x)
+	# Calculate trail dimensions - start with zero width
 	var trail_height = 40.0 * layer_depth  # Height based on ship depth
 	
-	# Position trail at ship's Y, spanning from start to end
-	var trail_x: float
-	if direction > 0:
-		trail_x = start_x
-	else:
-		trail_x = end_x
+	# Position trail at ship's Y, at the start position
+	_lightspeed_trail.position = Vector2(start_x, position.y - trail_height / 2.0)
+	_lightspeed_trail.size = Vector2(0.0, trail_height)  # Start at zero width
 	
-	_lightspeed_trail.position = Vector2(trail_x, position.y - trail_height / 2.0)
-	_lightspeed_trail.size = Vector2(trail_width, trail_height)
+	# Store start position for growth updates
+	_lightspeed_trail.set_meta("start_x", start_x)
+	_lightspeed_trail.set_meta("direction", direction)
 	
 	# Apply gradient shader
 	var trail_material = ShaderMaterial.new()
@@ -321,12 +319,51 @@ func _create_gradient_trail(start_x: float, end_x: float) -> void:
 		parent.move_child(_lightspeed_trail, get_index())
 
 
+func _update_trail_to_ship_position() -> void:
+	"""Update trail width and position to follow the ship's current position."""
+	if not _lightspeed_trail or not is_instance_valid(_lightspeed_trail):
+		return
+	
+	var start_x: float = _lightspeed_trail.get_meta("start_x", position.x)
+	var trail_direction: int = _lightspeed_trail.get_meta("direction", 1)
+	
+	# Calculate current trail width based on ship position
+	var trail_width = absf(position.x - start_x)
+	
+	# Update trail size
+	_lightspeed_trail.size.x = trail_width
+	
+	# Update position based on direction
+	if trail_direction > 0:
+		# Moving right: trail extends from start_x to ship
+		_lightspeed_trail.position.x = start_x
+	else:
+		# Moving left: trail extends from ship to start_x
+		_lightspeed_trail.position.x = position.x
+
+
+func _animate_jump_with_trail(progress: float, start_x: float, end_x: float) -> void:
+	"""Animate ship position and trail growth together during jump."""
+	# Update ship position based on progress
+	position.x = lerpf(start_x, end_x, progress)
+	
+	# Update trail to follow ship position
+	_update_trail_to_ship_position()
+
+
 func _fade_out_gradient_trail() -> void:
-	"""Fade out and remove the gradient trail."""
+	"""Fade out the gradient trail progressively from tail to head (like smoke dissipating)."""
 	if _lightspeed_trail and is_instance_valid(_lightspeed_trail):
 		var trail_tween = create_tween()
-		trail_tween.tween_method(_set_trail_opacity, 1.0, 0.0, 0.5)
+		# Progressive fade from tail to head using fade_progress
+		trail_tween.tween_method(_set_trail_fade_progress, 0.0, 1.0, 0.5).set_ease(Tween.EASE_IN)
 		trail_tween.tween_callback(_remove_gradient_trail)
+
+
+func _set_trail_fade_progress(value: float) -> void:
+	"""Helper to set trail fade progress via tween (0=full trail, 1=fully faded from tail)."""
+	if _lightspeed_trail and is_instance_valid(_lightspeed_trail) and _lightspeed_trail.material:
+		_lightspeed_trail.material.set_shader_parameter("fade_progress", value)
 
 
 func _set_trail_opacity(value: float) -> void:
@@ -482,12 +519,12 @@ func set_labels_visible(labels_visible: bool) -> void:
 		label_container.visible = labels_visible
 
 func set_texture(texture: Texture2D) -> void:
-	var sprite = $Sprite2D
-	if sprite:
-		sprite.texture = texture
+	var sprite_node = $Sprite2D
+	if sprite_node:
+		sprite_node.texture = texture
 
 func apply_texture_scale(scale_factor: float) -> void:
 	## Apply a scale factor to the sprite for sizing adjustments
-	var sprite = $Sprite2D
-	if sprite:
-		sprite.scale = Vector2(scale_factor, scale_factor)
+	var sprite_node = $Sprite2D
+	if sprite_node:
+		sprite_node.scale = Vector2(scale_factor, scale_factor)
