@@ -3,6 +3,11 @@ extends CanvasLayer
 
 ## Manages spaceship traffic with layered parallax effect
 ## Lane 1 = closest (fastest, largest), Lane 3 = farthest (slowest, smallest)
+## Observable and deterministic - all ships tracked in ship_registry
+
+signal ship_spawned(ship_id: int, ship_data: Dictionary)
+signal ship_removed(ship_id: int)
+signal registry_updated()
 
 @export var spaceship_scene: PackedScene
 @export var spaceship_textures: Array[Texture2D] = []  ## Array of spaceship textures to randomly choose from
@@ -80,6 +85,18 @@ var lanes: Array = [
 ]
 
 var viewport_size: Vector2
+
+# ============ SHIP REGISTRY (Observable State) ============
+# Tracks all active ships with their configuration and state
+# Each entry: { id, ship_ref, config_index, lane, row, direction, name, role, texture_index }
+var ship_registry: Array[Dictionary] = []
+var _next_ship_id: int = 0
+
+# ============ DETERMINISTIC SHIP CONFIGURATIONS ============
+# Pre-defined ship configurations for deterministic spawning
+# Each config: { name, role, lane, row, direction, texture_index, speed_index }
+# Set this array before calling spawn_from_config() for full determinism
+var ship_configurations: Array[Dictionary] = []
 
 func _ready() -> void:
 	viewport_size = get_viewport().get_visible_rect().size
@@ -200,7 +217,8 @@ func spawn_random_ship() -> int:
 		return -1
 	
 	# Randomly select a texture from the array
-	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
+	var texture_index = randi() % spaceship_textures.size()
+	var selected_texture = spaceship_textures[texture_index]
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
@@ -221,13 +239,16 @@ func spawn_random_ship() -> int:
 	
 	# Pick random row within the lane
 	var rows: Array = lane_config["rows"]
-	var row_y_ratio: float = rows[randi() % rows.size()]
+	var row_index = randi() % rows.size()
+	var row_y_ratio: float = rows[row_index]
 	
 	# Pick random ship data
-	var data = ship_data[randi() % ship_data.size()]
+	var data_index = randi() % ship_data.size()
+	var data = ship_data[data_index]
 	
 	# Pick random speed behavior
-	var speed_behavior = speeds_data[randi() % speeds_data.size()]
+	var speed_index = randi() % speeds_data.size()
+	var speed_behavior = speeds_data[speed_index]
 	
 	# Random direction
 	var direction = 1 if randf() > 0.5 else -1
@@ -261,6 +282,12 @@ func spawn_random_ship() -> int:
 	ship.spawn_margin = despawn_offset
 	
 	add_child(ship)
+	
+	# Register ship in registry
+	var ship_id = _register_ship(ship, lane_index, row_index, direction, 
+		data[0], data[1], texture_index, speed_index)
+	ship.set_meta("ship_id", ship_id)
+	
 	return lane_index
 
 func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship_role: String) -> Spaceship:
@@ -268,7 +295,8 @@ func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship
 		return null
 	
 	# Randomly select a texture from the array
-	var selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
+	var texture_index = randi() % spaceship_textures.size()
+	var selected_texture = spaceship_textures[texture_index]
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
@@ -282,7 +310,8 @@ func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship
 	var row_y_ratio: float = rows[row_index]
 	
 	# Pick random speed behavior
-	var speed_behavior = speeds_data[randi() % speeds_data.size()]
+	var speed_index = randi() % speeds_data.size()
+	var speed_behavior = speeds_data[speed_index]
 	var base_speed = lane_config["speed"] * speed_behavior[0]
 	
 	var direction = 1 if randf() > 0.5 else -1
@@ -299,7 +328,248 @@ func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship
 	ship.spawn_margin = despawn_offset
 	
 	add_child(ship)
+	
+	# Register ship in registry
+	var ship_id = _register_ship(ship, lane_index, row_index, direction, 
+		ship_name, ship_role, texture_index, speed_index)
+	ship.set_meta("ship_id", ship_id)
+	
 	return ship
+
+
+# ============ REGISTRY MANAGEMENT ============
+
+func _register_ship(ship: Spaceship, lane: int, row: int, direction: int, 
+		ship_name: String, ship_role: String, texture_index: int, speed_index: int) -> int:
+	"""Register a ship in the registry and return its unique ID"""
+	var ship_id = _next_ship_id
+	_next_ship_id += 1
+	
+	var entry := {
+		"id": ship_id,
+		"ship_ref": ship,
+		"lane": lane,
+		"row": row,
+		"direction": direction,
+		"name": ship_name,
+		"role": ship_role,
+		"texture_index": texture_index,
+		"speed_index": speed_index,
+	}
+	
+	ship_registry.append(entry)
+	ship_spawned.emit(ship_id, entry.duplicate())
+	registry_updated.emit()
+	
+	return ship_id
+
+
+func _unregister_ship(ship_id: int) -> void:
+	"""Remove a ship from the registry"""
+	for i in range(ship_registry.size() - 1, -1, -1):
+		if ship_registry[i]["id"] == ship_id:
+			ship_registry.remove_at(i)
+			ship_removed.emit(ship_id)
+			registry_updated.emit()
+			return
+
+
+func get_ship_registry() -> Array[Dictionary]:
+	"""Get a copy of the current ship registry for observation"""
+	var result: Array[Dictionary] = []
+	for entry in ship_registry:
+		var copy = entry.duplicate()
+		# Include current position from the ship reference
+		var ship = entry["ship_ref"] as Spaceship
+		if is_instance_valid(ship):
+			copy["position"] = ship.position
+			copy["current_speed"] = ship.current_speed
+		else:
+			copy["position"] = Vector2.ZERO
+			copy["current_speed"] = 0.0
+		result.append(copy)
+	return result
+
+
+func get_ships_in_lane(lane_index: int) -> Array[Dictionary]:
+	"""Get all ships currently in a specific lane"""
+	var result: Array[Dictionary] = []
+	for entry in ship_registry:
+		if entry["lane"] == lane_index:
+			var copy = entry.duplicate()
+			var ship = entry["ship_ref"] as Spaceship
+			if is_instance_valid(ship):
+				copy["position"] = ship.position
+			result.append(copy)
+	return result
+
+
+func get_lane_counts() -> Array[int]:
+	"""Get count of ships in each lane [lane1, lane2, lane3]"""
+	var counts: Array[int] = [0, 0, 0]
+	for entry in ship_registry:
+		var lane = entry["lane"]
+		if lane >= 0 and lane < 3:
+			counts[lane] += 1
+	return counts
+
+
+func get_registry_as_json() -> String:
+	"""Export the current registry state as JSON for debugging/saving"""
+	var data := {
+		"ship_count": ship_registry.size(),
+		"lane_counts": get_lane_counts(),
+		"ships": []
+	}
+	
+	for entry in ship_registry:
+		var ship = entry["ship_ref"] as Spaceship
+		var ship_data := {
+			"id": entry["id"],
+			"name": entry["name"],
+			"role": entry["role"],
+			"lane": entry["lane"],
+			"row": entry["row"],
+			"direction": entry["direction"],
+			"texture_index": entry["texture_index"],
+			"speed_index": entry["speed_index"],
+		}
+		if is_instance_valid(ship):
+			ship_data["position_x"] = ship.position.x
+			ship_data["position_y"] = ship.position.y
+			ship_data["current_speed"] = ship.current_speed
+		data["ships"].append(ship_data)
+	
+	return JSON.stringify(data, "\t")
+
+
+func clear_registry() -> void:
+	"""Clear the registry and remove all ships"""
+	for entry in ship_registry:
+		var ship = entry["ship_ref"] as Spaceship
+		if is_instance_valid(ship):
+			ship.queue_free()
+	ship_registry.clear()
+	registry_updated.emit()
+
+
+func set_ship_configurations(configs: Array[Dictionary]) -> void:
+	"""Set the deterministic ship configurations array"""
+	ship_configurations = configs
+
+
+func spawn_from_configurations() -> void:
+	"""Spawn all ships from the configurations array (deterministic)"""
+	clear_registry()
+	
+	for i in range(ship_configurations.size()):
+		var config = ship_configurations[i]
+		_spawn_ship_from_config(config, i)
+	
+	var counts = get_lane_counts()
+	print("[SpaceshipTraffic] Spawned %d ships from config - Lane 1: %d, Lane 2: %d, Lane 3: %d" % 
+		[ship_registry.size(), counts[0], counts[1], counts[2]])
+
+
+func _spawn_ship_from_config(config: Dictionary, config_index: int) -> Spaceship:
+	"""Spawn a single ship from a configuration dictionary"""
+	if not spaceship_scene:
+		return null
+	
+	var ship = spaceship_scene.instantiate() as Spaceship
+	if not ship:
+		return null
+	
+	# Extract config values with defaults
+	var lane_index: int = config.get("lane", 0)
+	var row_index: int = config.get("row", 0)
+	var direction: int = config.get("direction", 1)
+	var ship_name: String = config.get("name", "Unknown")
+	var ship_role: String = config.get("role", "Freighter")
+	var texture_index: int = config.get("texture_index", 0)
+	var speed_index: int = config.get("speed_index", 2)
+	var start_x_ratio: float = config.get("start_x_ratio", randf())  # 0-1 ratio of viewport
+	
+	# Validate indices
+	lane_index = clampi(lane_index, 0, lanes.size() - 1)
+	var lane_config = lanes[lane_index]
+	var rows: Array = lane_config["rows"]
+	row_index = clampi(row_index, 0, rows.size() - 1)
+	
+	if not spaceship_textures.is_empty():
+		texture_index = clampi(texture_index, 0, spaceship_textures.size() - 1)
+	speed_index = clampi(speed_index, 0, speeds_data.size() - 1)
+	
+	# Get texture
+	var selected_texture: Texture2D = null
+	if not spaceship_textures.is_empty():
+		selected_texture = spaceship_textures[texture_index]
+	
+	# Calculate position
+	var row_y_ratio: float = rows[row_index]
+	var y_pos = viewport_size.y * row_y_ratio
+	var x_pos = viewport_size.x * start_x_ratio
+	
+	# Get speed behavior
+	var speed_behavior = speeds_data[speed_index]
+	var base_speed = lane_config["speed"] * speed_behavior[0]
+	
+	# Setup ship
+	ship.setup(ship_name, ship_role, direction, lane_config["depth"], base_speed)
+	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
+	ship.position = Vector2(x_pos, y_pos)
+	if selected_texture:
+		ship.set_texture(selected_texture)
+	ship.apply_texture_scale(spaceship_scale)
+	ship.modulate.a = 1.0
+	ship.lane_index = lane_index
+	ship.spawn_margin = despawn_offset
+	
+	add_child(ship)
+	
+	# Register ship
+	var ship_id = _register_ship(ship, lane_index, row_index, direction, 
+		ship_name, ship_role, texture_index, speed_index)
+	ship.set_meta("ship_id", ship_id)
+	ship.set_meta("config_index", config_index)
+	
+	return ship
+
+
+func generate_default_configurations(count: int = 15) -> Array[Dictionary]:
+	"""Generate a set of default ship configurations for deterministic spawning"""
+	var configs: Array[Dictionary] = []
+	
+	for i in range(count):
+		# Distribute across lanes: 25% lane 0, 35% lane 1, 40% lane 2
+		var lane: int
+		var ratio = float(i) / float(count)
+		if ratio < 0.25:
+			lane = 0
+		elif ratio < 0.60:
+			lane = 1
+		else:
+			lane = 2
+		
+		var rows: Array = lanes[lane]["rows"]
+		var row = i % rows.size()
+		var direction = 1 if (i % 2 == 0) else -1
+		var texture_index = i % max(1, spaceship_textures.size())
+		var speed_index = i % speeds_data.size()
+		var data_index = i % ship_data.size()
+		
+		configs.append({
+			"name": ship_data[data_index][0],
+			"role": ship_data[data_index][1],
+			"lane": lane,
+			"row": row,
+			"direction": direction,
+			"texture_index": texture_index,
+			"speed_index": speed_index,
+			"start_x_ratio": float(i) / float(count),  # Spread across screen
+		})
+	
+	return configs
 
 func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D = null) -> Spaceship:
 	"""Spawn a ship from player input - always spawns in Lane 1 (closest)"""
@@ -308,8 +578,10 @@ func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D 
 	
 	# Use provided texture, or fall back to random from array
 	var selected_texture: Texture2D = texture
+	var texture_index: int = -1  # -1 indicates custom texture
 	if selected_texture == null and not spaceship_textures.is_empty():
-		selected_texture = spaceship_textures[randi() % spaceship_textures.size()]
+		texture_index = randi() % spaceship_textures.size()
+		selected_texture = spaceship_textures[texture_index]
 	
 	if selected_texture == null:
 		push_warning("SpaceshipTraffic: No texture available for player ship")
@@ -320,14 +592,16 @@ func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D 
 		return null
 	
 	# Use Lane 1 (index 0) - the closest lane for player ships
-	var lane_config = lanes[0]
+	var lane_index: int = 0
+	var lane_config = lanes[lane_index]
 	var rows: Array = lane_config["rows"]
-	var row_y_ratio: float = rows[rows.size() - 1]  # Use the bottom row of Lane 1
+	var row_index: int = rows.size() - 1  # Use the bottom row of Lane 1
+	var row_y_ratio: float = rows[row_index]
 	
-	# Always enter from the left, moving right
-	var direction = 1
+	# Always enter from the right, moving left (flipped direction)
+	var direction = -1
 	var y_pos = viewport_size.y * row_y_ratio
-	var x_pos: float = -spawn_offset
+	var x_pos: float = viewport_size.x + spawn_offset
 	
 	ship.setup(ship_name, ship_role, direction, lane_config["depth"], lane_config["speed"])
 	ship.set_movement_behavior(0.0, 0.0, 0.0)  # Steady movement for player ships
@@ -335,8 +609,15 @@ func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D 
 	ship.set_texture(selected_texture)
 	ship.apply_texture_scale(spaceship_scale)
 	ship.modulate.a = 1.0  # Full opacity for player ships
-	ship.lane_index = 0  # Player ships always in Lane 1 (closest)
+	ship.lane_index = lane_index
 	ship.spawn_margin = despawn_offset
 	
 	add_child(ship)
+	
+	# Register player ship in registry
+	var ship_id = _register_ship(ship, lane_index, row_index, direction, 
+		ship_name, ship_role, texture_index, -1)
+	ship.set_meta("ship_id", ship_id)
+	ship.set_meta("is_player_ship", true)
+	
 	return ship

@@ -18,11 +18,21 @@ var _settings: Dictionary = {}
 var _controls: Dictionary = {}  # Maps "group.key" to their input controls
 var _original_types: Dictionary = {}  # Tracks original types for proper save (int vs float)
 
+# Ship Registry Table UI
+var _ship_table_panel: PanelContainer
+var _ship_table_container: VBoxContainer
+var _ship_table_header: Button
+var _ship_table_grid: GridContainer
+var _ship_table_visible: bool = true
+var _update_timer: float = 0.0
+const SHIP_TABLE_UPDATE_INTERVAL: float = 0.5  # Update every 0.5 seconds
+
 
 func _ready() -> void:
 	save_button.pressed.connect(_on_save_pressed)
 	
 	# Get reference to spaceship traffic (deferred to ensure scene is ready)
+	# Ship registry table is created after references are set up
 	call_deferred("_setup_references")
 	
 	_load_settings()
@@ -33,11 +43,22 @@ func _ready() -> void:
 	visible = false
 
 
+func _process(delta: float) -> void:
+	# Update ship table periodically when visible
+	if _ship_table_panel and _ship_table_panel.visible and _ship_table_visible:
+		_update_timer += delta
+		if _update_timer >= SHIP_TABLE_UPDATE_INTERVAL:
+			_update_timer = 0.0
+			_update_ship_registry_table()
+
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	# Toggle visibility with Ctrl+Shift+D
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_D and event.ctrl_pressed and event.shift_pressed:
 			visible = !visible
+			if _ship_table_panel:
+				_ship_table_panel.visible = visible
 			get_viewport().set_input_as_handled()
 
 
@@ -56,6 +77,9 @@ func _setup_references() -> void:
 			_preview_spaceship = preview_layer.get_node_or_null("PreviewSpaceship")
 			if _preview_spaceship:
 				print("[DebugPanel] Found PreviewSpaceship")
+	
+	# Create ship registry table after references are ready
+	_create_ship_registry_table()
 
 
 func _load_settings() -> void:
@@ -419,3 +443,208 @@ func set_value(group: String, key: String, value: Variant) -> void:
 func refresh_ui() -> void:
 	"""Rebuild the UI from current settings."""
 	_build_ui()
+
+
+# ============ SHIP REGISTRY TABLE ============
+
+func _create_ship_registry_table() -> void:
+	"""Create a collapsible ship registry table at top-left of screen."""
+	# Get the parent CanvasLayer (ConsoleUI)
+	var canvas_layer = get_parent()
+	if not canvas_layer:
+		return
+	
+	# Create the panel container
+	_ship_table_panel = PanelContainer.new()
+	_ship_table_panel.name = "ShipRegistryPanel"
+	
+	# Style the panel
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.0, 0.02, 0.05, 0.85)
+	panel_style.border_color = Color(0.0, 0.5, 0.65, 0.8)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(4)
+	panel_style.content_margin_left = 8
+	panel_style.content_margin_right = 8
+	panel_style.content_margin_top = 6
+	panel_style.content_margin_bottom = 6
+	_ship_table_panel.add_theme_stylebox_override("panel", panel_style)
+	
+	# Position at top-left
+	_ship_table_panel.anchors_preset = Control.PRESET_TOP_LEFT
+	_ship_table_panel.offset_left = 15
+	_ship_table_panel.offset_top = 15
+	_ship_table_panel.offset_right = 350
+	_ship_table_panel.offset_bottom = 400
+	
+	# Main container
+	_ship_table_container = VBoxContainer.new()
+	_ship_table_container.add_theme_constant_override("separation", 6)
+	_ship_table_panel.add_child(_ship_table_container)
+	
+	# Collapsible header button
+	_ship_table_header = Button.new()
+	_ship_table_header.text = "v SHIP REGISTRY"
+	_ship_table_header.flat = true
+	_ship_table_header.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_ship_table_header.add_theme_font_size_override("font_size", 13)
+	_ship_table_header.add_theme_color_override("font_color", Color(0.3, 0.85, 0.95, 1.0))
+	_ship_table_header.add_theme_color_override("font_hover_color", Color(0.5, 0.95, 1.0, 1.0))
+	_ship_table_header.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_ship_table_header.pressed.connect(_on_ship_table_toggle)
+	_ship_table_container.add_child(_ship_table_header)
+	
+	# Separator
+	var separator = HSeparator.new()
+	separator.add_theme_color_override("separation", Color(0.0, 0.5, 0.65, 0.5))
+	_ship_table_container.add_child(separator)
+	
+	# Lane summary row
+	var summary_label = Label.new()
+	summary_label.name = "SummaryLabel"
+	summary_label.add_theme_font_size_override("font_size", 11)
+	summary_label.add_theme_color_override("font_color", Color(0.5, 0.75, 0.8, 0.9))
+	summary_label.text = "Lane 1: 0 | Lane 2: 0 | Lane 3: 0"
+	_ship_table_container.add_child(summary_label)
+	
+	# Scroll container for the grid
+	var scroll = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(320, 280)
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_ship_table_container.add_child(scroll)
+	
+	# Grid container for ship data
+	_ship_table_grid = GridContainer.new()
+	_ship_table_grid.columns = 5  # ID, Name, Lane, Dir, Pos X
+	_ship_table_grid.add_theme_constant_override("h_separation", 10)
+	_ship_table_grid.add_theme_constant_override("v_separation", 4)
+	scroll.add_child(_ship_table_grid)
+	
+	# Add header row
+	_add_table_header()
+	
+	# Add to canvas layer
+	canvas_layer.add_child(_ship_table_panel)
+	
+	# Start hidden (same as debug panel)
+	_ship_table_panel.visible = false
+	
+	# Initial update
+	_update_ship_registry_table()
+	
+	# Connect to registry signals if available
+	if _spaceship_traffic and _spaceship_traffic.has_signal("registry_updated"):
+		_spaceship_traffic.registry_updated.connect(_update_ship_registry_table)
+
+
+func _add_table_header() -> void:
+	"""Add header row to the ship table grid."""
+	var headers = ["ID", "Name", "Lane", "Dir", "Pos X"]
+	var widths = [30, 100, 40, 35, 60]
+	
+	for i in range(headers.size()):
+		var label = Label.new()
+		label.text = headers[i]
+		label.add_theme_font_size_override("font_size", 10)
+		label.add_theme_color_override("font_color", Color(0.4, 0.7, 0.8, 0.8))
+		label.custom_minimum_size.x = widths[i]
+		_ship_table_grid.add_child(label)
+
+
+func _on_ship_table_toggle() -> void:
+	"""Toggle ship table content visibility."""
+	_ship_table_visible = not _ship_table_visible
+	
+	# Update header arrow
+	if _ship_table_visible:
+		_ship_table_header.text = "v SHIP REGISTRY"
+	else:
+		_ship_table_header.text = "> SHIP REGISTRY"
+	
+	# Show/hide content (skip header at index 0)
+	for i in range(1, _ship_table_container.get_child_count()):
+		_ship_table_container.get_child(i).visible = _ship_table_visible
+
+
+func _update_ship_registry_table() -> void:
+	"""Update the ship registry table with current data."""
+	if not _spaceship_traffic or not _ship_table_grid:
+		return
+	
+	# Get registry data
+	var registry: Array = []
+	if _spaceship_traffic.has_method("get_ship_registry"):
+		registry = _spaceship_traffic.get_ship_registry()
+	
+	# Update summary
+	var summary_label = _ship_table_container.get_node_or_null("SummaryLabel")
+	if summary_label and _spaceship_traffic.has_method("get_lane_counts"):
+		var counts = _spaceship_traffic.get_lane_counts()
+		summary_label.text = "Lane 1: %d | Lane 2: %d | Lane 3: %d | Total: %d" % [counts[0], counts[1], counts[2], registry.size()]
+	
+	# Clear existing rows (keep header - first 5 children)
+	while _ship_table_grid.get_child_count() > 5:
+		var child = _ship_table_grid.get_child(5)
+		_ship_table_grid.remove_child(child)
+		child.queue_free()
+	
+	# Add ship rows
+	var lane_colors = [
+		Color(0.3, 0.7, 1.0, 1.0),   # Lane 0 (1) - Blue
+		Color(1.0, 0.9, 0.3, 1.0),   # Lane 1 (2) - Yellow
+		Color(1.0, 0.4, 0.4, 1.0),   # Lane 2 (3) - Red
+	]
+	
+	for ship_data in registry:
+		var ship_id = ship_data.get("id", -1)
+		var ship_name = ship_data.get("name", "???")
+		var lane = ship_data.get("lane", -1)
+		var direction = ship_data.get("direction", 0)
+		var pos: Vector2 = ship_data.get("position", Vector2.ZERO)
+		
+		# Truncate name if too long
+		if ship_name.length() > 12:
+			ship_name = ship_name.substr(0, 10) + ".."
+		
+		var lane_color = lane_colors[lane] if lane >= 0 and lane < 3 else Color.WHITE
+		
+		# ID
+		var id_label = Label.new()
+		id_label.text = str(ship_id)
+		id_label.add_theme_font_size_override("font_size", 10)
+		id_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.9, 0.9))
+		id_label.custom_minimum_size.x = 30
+		_ship_table_grid.add_child(id_label)
+		
+		# Name
+		var name_label = Label.new()
+		name_label.text = ship_name
+		name_label.add_theme_font_size_override("font_size", 10)
+		name_label.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0, 0.95))
+		name_label.custom_minimum_size.x = 100
+		_ship_table_grid.add_child(name_label)
+		
+		# Lane (color-coded)
+		var lane_label = Label.new()
+		lane_label.text = str(lane + 1)  # Display as 1-indexed
+		lane_label.add_theme_font_size_override("font_size", 10)
+		lane_label.add_theme_color_override("font_color", lane_color)
+		lane_label.custom_minimum_size.x = 40
+		_ship_table_grid.add_child(lane_label)
+		
+		# Direction
+		var dir_label = Label.new()
+		dir_label.text = ">" if direction > 0 else "<"
+		dir_label.add_theme_font_size_override("font_size", 10)
+		dir_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.9, 0.9))
+		dir_label.custom_minimum_size.x = 35
+		_ship_table_grid.add_child(dir_label)
+		
+		# Position X
+		var pos_label = Label.new()
+		pos_label.text = "%.0f" % pos.x
+		pos_label.add_theme_font_size_override("font_size", 10)
+		pos_label.add_theme_color_override("font_color", Color(0.5, 0.7, 0.8, 0.8))
+		pos_label.custom_minimum_size.x = 60
+		_ship_table_grid.add_child(pos_label)

@@ -201,7 +201,6 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 		_launch_tween.parallel().tween_property(label_container, "position:y", label_offset_y + lift_target_y, lift_duration)
 	
 	# Phase 2: Accelerate to the left (exponential feel)
-	var viewport_size := get_viewport_rect().size
 	var exit_x := -launch_exit_offset
 	
 	_launch_tween.set_ease(Tween.EASE_IN)
