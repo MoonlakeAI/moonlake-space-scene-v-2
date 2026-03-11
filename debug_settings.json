@@ -20,7 +20,7 @@
 	"space_traffic": {
 		"label_offset_x_looking_left": 35.0,
 		"label_offset_x_looking_right": -110.0,
-		"show_lane_background": true
+		"show_lane_background": false
 	},
 	"spaceship": {
 		"despawn_offset": 850.0,

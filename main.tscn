@@ -439,19 +439,13 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 13
 text = "[ BLUEPRINT ]"
 
-[node name="ReferenceLabel" type="Label" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.6, 0.7, 0.8)
-theme_override_font_sizes/font_size = 10
-text = "REFERENCE:"
-
-[node name="ReferenceScroll" type="ScrollContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer"]
+[node name="ReferenceScroll" type="ScrollContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=486732993]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-horizontal_scroll_mode = 2
+horizontal_scroll_mode = 3
 vertical_scroll_mode = 0
 
-[node name="ReferenceContainer" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ReferenceScroll"]
+[node name="ReferenceContainer" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ReferenceScroll" unique_id=1666803162]
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_constants/separation = 6

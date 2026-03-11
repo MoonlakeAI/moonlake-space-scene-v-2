@@ -61,6 +61,15 @@ var base_y: float = 0.0             # Original Y position for drift calculation
 var time_alive: float = 0.0         # Time since spawn for drift calculation
 var current_speed: float = 0.0      # Actual speed (changes with acceleration)
 
+# Organic speed variation - makes ships naturally accelerate/decelerate
+var organic_speed_enabled: bool = true        # Enable organic speed changes
+var organic_target_speed: float = 0.0         # Target speed we're transitioning to
+var organic_speed_lerp_rate: float = 0.5      # How fast to transition (per second)
+var organic_next_change_time: float = 0.0     # When to pick a new target speed
+var organic_change_interval_min: float = 2.0  # Min seconds between speed changes
+var organic_change_interval_max: float = 5.0  # Max seconds between speed changes
+var organic_speed_variance: float = 0.25      # How much speed can vary from base (0.25 = ±25%)
+
 var viewport_width: float = 1920.0
 var viewport_height: float = 1080.0
 var spawn_margin: float = 200.0  # Extra distance beyond screen edges for smooth entry/exit
@@ -69,9 +78,11 @@ var row_index: int = 0    # Which row within the lane
 
 # Activity state
 var activity: Activity = Activity.NONE      # Current activity
-var _activity_done_this_lane: bool = false  # Only one activity per lane
-var _activity_triggered: bool = false       # Has activity trigger been checked
 var _activity_tween: Tween = null           # Tween for activity animations
+
+# Multi-segment activity system - allows activity checks at multiple points in journey
+var _activity_check_points: Array[float] = [0.2, 0.4, 0.6, 0.8]  # Progress points to check for activities
+var _next_check_index: int = 0              # Which checkpoint to check next
 
 # Lightspeed jump shader
 var _lightspeed_shader: ShaderMaterial = null
@@ -95,6 +106,10 @@ func _ready() -> void:
 	viewport_height = viewport_size.y
 	base_y = position.y
 	current_speed = speed
+	organic_target_speed = speed
+	
+	# Randomize initial organic speed change timing so ships don't all change at once
+	organic_next_change_time = randf_range(0.5, organic_change_interval_max)
 	
 	# Calculate label width from original offsets
 	if label_container:
@@ -107,11 +122,13 @@ func _process(delta: float) -> void:
 	
 	# Skip movement if activity is controlling speed
 	if activity == Activity.NONE:
-		# Apply acceleration (speed changes over time)
-		if acceleration != 0.0:
+		# Organic speed variation - natural acceleration/deceleration
+		if organic_speed_enabled:
+			_update_organic_speed(delta)
+		# Apply manual acceleration (speed changes over time)
+		elif acceleration != 0.0:
 			current_speed += acceleration * delta
-			# Clamp speed to reasonable bounds
-			current_speed = clampf(current_speed, speed * 0.3, speed * 2.5)
+			current_speed = clampf(current_speed, min_speed, max_speed)
 	
 	# Horizontal movement
 	position.x += current_speed * direction * delta
@@ -121,7 +138,7 @@ func _process(delta: float) -> void:
 		position.y = base_y + sin(time_alive * drift_frequency * TAU) * drift_amplitude
 	
 	# Check for random activity trigger (only once per lane, when no activity running)
-	if not _activity_done_this_lane and activity == Activity.NONE:
+	if activity == Activity.NONE:
 		_check_activity_trigger()
 	
 	# Check if ship has exited screen (journey completed)
@@ -131,17 +148,61 @@ func _process(delta: float) -> void:
 		journey_completed.emit(self)
 
 
-func _check_activity_trigger() -> void:
-	"""Check if we should trigger a random activity based on journey progress."""
-	var progress = _get_journey_progress()
+func _update_organic_speed(delta: float) -> void:
+	"""Update organic speed variation - makes ships naturally speed up and slow down."""
+	# Check if it's time to pick a new target speed
+	if time_alive >= organic_next_change_time:
+		_pick_new_organic_target()
 	
-	# Only check once we're past minimum progress
-	if progress < 0.2:
+	# Smoothly interpolate current speed towards target
+	if abs(current_speed - organic_target_speed) > 0.1:
+		current_speed = lerpf(current_speed, organic_target_speed, organic_speed_lerp_rate * delta)
+		current_speed = clampf(current_speed, min_speed, max_speed)
+
+
+func _pick_new_organic_target() -> void:
+	"""Pick a new random target speed for organic movement."""
+	# Calculate speed range based on base speed and variance
+	var speed_min = speed * (1.0 - organic_speed_variance)
+	var speed_max = speed * (1.0 + organic_speed_variance)
+	
+	# Clamp to ship's min/max limits
+	speed_min = maxf(speed_min, min_speed)
+	speed_max = minf(speed_max, max_speed)
+	
+	# Pick new target (bias towards base speed slightly)
+	var rand_val = randf()
+	if rand_val < 0.3:
+		# 30% chance: accelerate
+		organic_target_speed = randf_range(speed, speed_max)
+	elif rand_val < 0.6:
+		# 30% chance: decelerate
+		organic_target_speed = randf_range(speed_min, speed)
+	else:
+		# 40% chance: stay near current with small variation
+		var small_variance = speed * 0.1
+		organic_target_speed = randf_range(current_speed - small_variance, current_speed + small_variance)
+	
+	organic_target_speed = clampf(organic_target_speed, min_speed, max_speed)
+	
+	# Schedule next speed change
+	organic_next_change_time = time_alive + randf_range(organic_change_interval_min, organic_change_interval_max)
+
+
+func _check_activity_trigger() -> void:
+	"""Check if we should trigger an activity at journey checkpoints."""
+	# Skip if we've checked all points or an activity is running
+	if _next_check_index >= _activity_check_points.size():
 		return
 	
-	# Random check (only do this once per valid range)
-	if not _activity_triggered and progress >= 0.2 and progress <= 0.8:
-		_activity_triggered = true
+	var progress = _get_journey_progress()
+	var next_checkpoint = _activity_check_points[_next_check_index]
+	
+	# Check if we've reached the next checkpoint
+	if progress >= next_checkpoint:
+		_next_check_index += 1
+		
+		# Roll for activity
 		if randf() < ACTIVITY_CHANCE:
 			_start_random_activity()
 
@@ -188,7 +249,7 @@ func _start_random_activity() -> void:
 func _start_activity_stop_and_go() -> void:
 	"""StopAndGo activity: bring ship to halt, pause, then resume speed."""
 	activity = Activity.STOP_AND_GO
-	_activity_done_this_lane = true
+
 	
 	var original_speed = current_speed
 	
@@ -215,7 +276,7 @@ func _start_activity_stop_and_go() -> void:
 func _start_activity_accelerate() -> void:
 	"""Accelerate activity: increase ship speed and maintain it."""
 	activity = Activity.ACCELERATE
-	_activity_done_this_lane = true
+
 	
 	# Calculate target speed (increase by 30-60% but clamp to max_speed)
 	var speed_increase = current_speed * randf_range(0.3, 0.6)
@@ -238,7 +299,7 @@ func _start_activity_accelerate() -> void:
 func _start_activity_decelerate() -> void:
 	"""Decelerate activity: decrease ship speed and maintain it."""
 	activity = Activity.DECELERATE
-	_activity_done_this_lane = true
+
 	
 	# Calculate target speed (decrease by 20-40% but clamp to min_speed)
 	var speed_decrease = current_speed * randf_range(0.2, 0.4)
@@ -261,7 +322,7 @@ func _start_activity_decelerate() -> void:
 func _start_activity_light_speed_jump() -> void:
 	"""LightSpeedJump activity: ship glows, scales down, then rapidly jumps off-screen with a gradient trail."""
 	activity = Activity.LIGHT_SPEED_JUMP
-	_activity_done_this_lane = true
+
 	
 	# Setup shader if not already done
 	_setup_lightspeed_shader()
@@ -504,13 +565,18 @@ func transition_to_lane(new_lane_index: int, new_row_index: int, row_y_ratio: fl
 func _on_activity_complete() -> void:
 	"""Called when an activity finishes."""
 	activity = Activity.NONE
+	
+	# Sync organic speed system with current speed after activity
+	# This makes the new speed (from Accelerate/Decelerate) the baseline for organic variation
+	organic_target_speed = current_speed
+	speed = current_speed  # Update base speed so organic variation centers around new speed
+	organic_next_change_time = time_alive + randf_range(1.0, organic_change_interval_max)
 
 
 func _reset_activity_state() -> void:
 	"""Reset activity state for a new lane."""
 	activity = Activity.NONE
-	_activity_done_this_lane = false
-	_activity_triggered = false
+	_next_check_index = 0  # Reset checkpoint index for new lane
 	
 	# Kill any running activity tween
 	if _activity_tween and _activity_tween.is_valid():
@@ -540,6 +606,7 @@ func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_s
 	# Closer ships (higher depth) are bigger and move faster
 	speed = p_speed
 	current_speed = p_speed
+	organic_target_speed = p_speed  # Initialize organic speed target
 	scale = Vector2(layer_depth, layer_depth)
 	
 	# Flip sprite if moving left (but keep labels readable)
