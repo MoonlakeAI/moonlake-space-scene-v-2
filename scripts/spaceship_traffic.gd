@@ -107,9 +107,34 @@ var ship_configurations: Array[Dictionary] = []
 
 func _ready() -> void:
 	viewport_size = get_viewport().get_visible_rect().size
+	_load_spaceship_textures_from_folder()
 	spawn_initial_ships()
 	if debug_show_layers:
 		_create_debug_layer_visuals()
+
+
+func _load_spaceship_textures_from_folder() -> void:
+	"""Load all spaceship textures from res://assets/images/spaceships/ folder"""
+	var folder_path := "res://assets/images/spaceships/"
+	var dir := DirAccess.open(folder_path)
+	if dir == null:
+		push_warning("SpaceshipTraffic: Could not open folder: %s" % folder_path)
+		return
+	
+	spaceship_textures.clear()
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		# Only load PNG files (skip .import files)
+		if file_name.ends_with(".png"):
+			var full_path := folder_path + file_name
+			var texture := load(full_path) as Texture2D
+			if texture:
+				spaceship_textures.append(texture)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	
+	print("[SpaceshipTraffic] Loaded %d spaceship textures from %s" % [spaceship_textures.size(), folder_path])
 
 func _create_debug_layer_visuals() -> void:
 	"""Create transparent colored rectangles to visualize each lane's row positions"""
