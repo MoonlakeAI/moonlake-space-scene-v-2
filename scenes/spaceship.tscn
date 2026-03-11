@@ -3,6 +3,11 @@
 [ext_resource type="Script" uid="uid://rtscgxa2lnm2" path="res://scripts/spaceship.gd" id="1_spaceship"]
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="2_shader"]
 [ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="3_label_bg_shader"]
+[ext_resource type="FontFile" uid="uid://b8il6578g5cev" path="res://assets/fonts/Space_Grotesk/static/SpaceGrotesk-Medium.ttf" id="4_font"]
+
+[sub_resource type="FontVariation" id="FontVariation_spaced"]
+base_font = ExtResource("4_font")
+spacing_glyph = 3
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_label_bg"]
 shader = ExtResource("3_label_bg_shader")
@@ -58,6 +63,7 @@ alignment = 1
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_fonts/font = SubResource("FontVariation_spaced")
 theme_override_font_sizes/font_size = 22
 text = "SHIP NAME"
 horizontal_alignment = 1
