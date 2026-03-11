@@ -200,9 +200,9 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	if label_container:
 		_launch_tween.parallel().tween_property(label_container, "position:y", label_offset_y + lift_target_y, lift_duration)
 	
-	# Phase 2: Accelerate to the right (exponential feel)
+	# Phase 2: Accelerate to the left (exponential feel)
 	var viewport_size := get_viewport_rect().size
-	var exit_x := viewport_size.x + launch_exit_offset
+	var exit_x := -launch_exit_offset
 	
 	_launch_tween.set_ease(Tween.EASE_IN)
 	_launch_tween.set_trans(Tween.TRANS_EXPO)
@@ -242,9 +242,9 @@ func _dock_next_ship() -> void:
 	_base_position.x = viewport_size.x / 2.0
 	_base_position.y = viewport_size.y * _position_y_ratio
 	
-	# Start ship off-screen to the left, at lifted height
+	# Start ship off-screen to the right, at lifted height
 	var lifted_y := _base_position.y - lift_amount
-	position.x = -dock_enter_offset
+	position.x = viewport_size.x + dock_enter_offset
 	position.y = lifted_y
 	
 	# Reset sprite offset
@@ -309,7 +309,7 @@ func _sync_texture() -> void:
 		var texture: Texture2D = _generator_panel.get_current_ship_texture()
 		if texture:
 			sprite.texture = texture
-			sprite.scale = Vector2(preview_scale, preview_scale)
+			sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
 			return
 	
 	# Fallback: use our own loaded textures
@@ -317,7 +317,7 @@ func _sync_texture() -> void:
 		if _current_index >= _loaded_textures.size():
 			_current_index = 0
 		sprite.texture = _loaded_textures[_current_index]
-		sprite.scale = Vector2(preview_scale, preview_scale)
+		sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
 
 
 func _on_image_generated(_path: String) -> void:
@@ -341,7 +341,7 @@ func set_position_y_ratio(ratio: float) -> void:
 func set_preview_texture(texture: Texture2D) -> void:
 	if sprite and texture:
 		sprite.texture = texture
-		sprite.scale = Vector2(preview_scale, preview_scale)
+		sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
 
 
 ## Update the preview to match the generator panel's current selection

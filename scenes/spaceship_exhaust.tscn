@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://kgor7ev0ljqp"]
+
+[ext_resource type="Script" path="res://scripts/spaceship_exhaust.gd" id="1_script"]
+
+[node name="SpaceshipExhaust" type="Node2D" unique_id=90855683]
+script = ExtResource("1_script")
