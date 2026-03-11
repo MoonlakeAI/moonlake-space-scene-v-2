@@ -21,6 +21,7 @@ const DEFAULT_NAME := ""
 const DEFAULT_ROLE := ""
 
 @export var preview_scale: float = 0.8  ## Scale of the preview ship
+@export var label_offset_x: float = 0.0  ## Horizontal offset for labels (when facing left)
 @export var label_offset_y: float = 0.0  ## Vertical offset for labels (0 = centered on ship)
 
 # Idle bob animation parameters
@@ -78,6 +79,11 @@ func _ready() -> void:
 	if role_label:
 		role_label.text = DEFAULT_ROLE
 	
+	# Apply initial label offset
+	if label_container:
+		label_container.position.x = label_offset_x
+		label_container.position.y = label_offset_y
+	
 	# Find panels and connect to inputs
 	await get_tree().process_frame
 	_find_generator_panel()
@@ -96,6 +102,7 @@ func _process(delta: float) -> void:
 	if sprite:
 		sprite.position.y = bob_offset
 	if label_container:
+		label_container.position.x = label_offset_x
 		label_container.position.y = label_offset_y + bob_offset
 
 
@@ -188,6 +195,7 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	if sprite:
 		sprite.position.y = current_bob
 	if label_container:
+		label_container.position.x = label_offset_x
 		label_container.position.y = label_offset_y + current_bob
 	
 	# Create launch animation sequence
@@ -251,6 +259,7 @@ func _dock_next_ship() -> void:
 	if sprite:
 		sprite.position.y = 0
 	if label_container:
+		label_container.position.x = label_offset_x
 		label_container.position.y = label_offset_y
 	
 	# Hide ship initially (will appear after delay)
@@ -304,9 +313,9 @@ func _sync_texture() -> void:
 	if not sprite:
 		return
 	
-	# Try to get texture from generator panel first
-	if _generator_panel and _generator_panel.has_method("get_current_ship_texture"):
-		var texture: Texture2D = _generator_panel.get_current_ship_texture()
+	# Try to get generated texture from generator panel first (prioritize AI-generated images)
+	if _generator_panel and _generator_panel.has_method("get_generated_texture"):
+		var texture: Texture2D = _generator_panel.get_generated_texture()
 		if texture:
 			sprite.texture = texture
 			sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
@@ -320,7 +329,7 @@ func _sync_texture() -> void:
 		sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
 
 
-func _on_image_generated(_path: String) -> void:
+func _on_image_generated(_path: String, _texture: Texture2D = null) -> void:
 	if _state == State.IDLE:
 		_sync_texture()
 
@@ -355,3 +364,17 @@ func set_ship_index(index: int) -> void:
 	_current_index = index
 	if _state == State.IDLE:
 		_sync_texture()
+
+
+## Set label X offset (horizontal position)
+func set_label_offset_x(offset: float) -> void:
+	label_offset_x = offset
+	if label_container:
+		label_container.position.x = label_offset_x
+
+
+## Set label Y offset (vertical position)
+func set_label_offset_y(offset: float) -> void:
+	label_offset_y = offset
+	if label_container:
+		label_container.position.y = label_offset_y

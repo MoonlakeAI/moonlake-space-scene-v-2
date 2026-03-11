@@ -23,7 +23,7 @@ shader_parameter/glitch_chance = 0.03
 [node name="Spaceship" type="Node2D" unique_id=975017772]
 script = ExtResource("1_spaceship")
 label_offset_x_looking_right = -180.0
-label_offset_x_looking_left = 180.0
+label_offset_x_looking_left = 150.0
 
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=1149275496]
 

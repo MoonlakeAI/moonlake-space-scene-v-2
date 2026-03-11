@@ -1,0 +1,15 @@
+{
+	"errors": [],
+	"warnings": [
+		{
+			"message": "GDScript::reload: The local function parameter \"offset\" is shadowing an already-declared property in the base class \"CanvasLayer\".",
+			"source_file": "res://scripts/spaceship_traffic.gd",
+			"source_line": 738
+		},
+		{
+			"message": "GDScript::reload: The local function parameter \"offset\" is shadowing an already-declared property in the base class \"CanvasLayer\".",
+			"source_file": "res://scripts/spaceship_traffic.gd",
+			"source_line": 747
+		}
+	]
+}

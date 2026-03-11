@@ -3,8 +3,11 @@ extends PanelContainer
 ## Spaceship Generator Panel
 ## Calls backend API to generate spaceship images and saves them locally
 
-signal image_generated(path: String)
+signal image_generated(path: String, texture: Texture2D)
 signal ship_selected(index: int)
+
+## Structure for tracking generated ships: {timestamp: String, path: String, texture: Texture2D, prompt: String}
+var _generated_ships: Array[Dictionary] = []
 
 const SAVE_DIR := "user://generated_spaceships/"
 const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel, facing towards right, maintain the aspect ratio of the reference images"
@@ -40,6 +43,7 @@ var _http_request: HTTPRequest
 var _download_request: HTTPRequest
 var _poll_timer: Timer
 var _current_job_id: String = ""
+var _current_prompt: String = ""
 var _is_generating := false
 var _progress_blocks: Array[ColorRect] = []
 var _loaded_textures: Array[Texture2D] = []
@@ -270,6 +274,7 @@ func _on_generate_pressed() -> void:
 
 func _start_generation(prompt: String) -> void:
 	_is_generating = true
+	_current_prompt = prompt
 	generate_button.disabled = true
 	generate_button.text = "BUILDING..."
 	_show_progress()
@@ -416,10 +421,10 @@ func _save_base64_image(base64_data: String) -> void:
 		file.close()
 		print("[SpaceshipGenerator] Saved successfully!")
 		
-		# Store generated texture
-		_store_generated_texture(image_bytes)
+		# Store generated texture and track the ship
+		_store_generated_texture(image_bytes, save_path)
 		
-		image_generated.emit(save_path)
+		image_generated.emit(save_path, _generated_texture)
 		_play_success_effect()
 	else:
 		var err := FileAccess.get_open_error()
@@ -445,10 +450,10 @@ func _on_download_completed(result: int, response_code: int, _headers: PackedStr
 		file.close()
 		print("[SpaceshipGenerator] Saved: ", save_path)
 		
-		# Store generated texture
-		_store_generated_texture(body)
+		# Store generated texture and track the ship
+		_store_generated_texture(body, save_path)
 		
-		image_generated.emit(save_path)
+		image_generated.emit(save_path, _generated_texture)
 		_play_success_effect()
 	else:
 		_on_error("Failed to save image")
@@ -456,7 +461,7 @@ func _on_download_completed(result: int, response_code: int, _headers: PackedStr
 	_reset_state()
 
 
-func _store_generated_texture(image_bytes: PackedByteArray) -> void:
+func _store_generated_texture(image_bytes: PackedByteArray, save_path: String) -> void:
 	# Load image from bytes
 	var image := Image.new()
 	var error := image.load_png_from_buffer(image_bytes)
@@ -469,6 +474,16 @@ func _store_generated_texture(image_bytes: PackedByteArray) -> void:
 	
 	# Create texture from image
 	_generated_texture = ImageTexture.create_from_image(image)
+	
+	# Track this generated ship
+	var timestamp := Time.get_datetime_string_from_system()
+	_generated_ships.append({
+		"timestamp": timestamp,
+		"path": save_path,
+		"texture": _generated_texture,
+		"prompt": _current_prompt.substr(0, 50) + "..." if _current_prompt.length() > 50 else _current_prompt
+	})
+	print("[SpaceshipGenerator] Tracked generated ship #%d" % _generated_ships.size())
 
 
 func _on_error(message: String) -> void:
@@ -496,3 +511,13 @@ func get_generated_texture() -> Texture2D:
 	if _generated_texture != null:
 		return _generated_texture
 	return get_current_ship_texture()
+
+
+## Returns the list of all generated ships for tracking
+func get_generated_ships() -> Array[Dictionary]:
+	return _generated_ships
+
+
+## Returns the count of generated ships
+func get_generated_ships_count() -> int:
+	return _generated_ships.size()

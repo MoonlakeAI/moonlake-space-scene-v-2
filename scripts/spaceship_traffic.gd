@@ -732,3 +732,21 @@ func reset_spawn_position() -> void:
 	_current_spawn_row = 0
 	_current_spawn_direction = 1
 	print("[SpaceshipTraffic] Spawn position reset to Lane 1.1, dir=1")
+
+
+## Update label offset for left-facing ships on all active ships
+func set_all_ships_label_offset_left(new_offset: float) -> void:
+	for entry in ship_registry:
+		var ship = entry.get("ship_ref")
+		if ship and is_instance_valid(ship) and ship.has_method("set_label_offset_x_looking_left"):
+			ship.set_label_offset_x_looking_left(new_offset)
+	print("[SpaceshipTraffic] Updated label_offset_x_looking_left to %s on %d ships" % [new_offset, ship_registry.size()])
+
+
+## Update label offset for right-facing ships on all active ships
+func set_all_ships_label_offset_right(new_offset: float) -> void:
+	for entry in ship_registry:
+		var ship = entry.get("ship_ref")
+		if ship and is_instance_valid(ship) and ship.has_method("set_label_offset_x_looking_right"):
+			ship.set_label_offset_x_looking_right(new_offset)
+	print("[SpaceshipTraffic] Updated label_offset_x_looking_right to %s on %d ships" % [new_offset, ship_registry.size()])

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cp7ofj7yb7ior"
-path="res://.godot/imported/mining_spaceship_test.png-ff3ed273a695eee91122a2ebc5f876c4.ctex"
+uid="uid://ddsfsa4fuhh5p"
+path="res://.godot/imported/speeder_3.png-d5d7a47d648cf09a903bad05698bf3ef.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/images/spaceships/mining_spaceship_test.png"
-dest_files=["res://.godot/imported/mining_spaceship_test.png-ff3ed273a695eee91122a2ebc5f876c4.ctex"]
+source_file="res://assets/images/spaceships/speeder_3.png"
+dest_files=["res://.godot/imported/speeder_3.png-d5d7a47d648cf09a903bad05698bf3ef.ctex"]
 
 [params]
 

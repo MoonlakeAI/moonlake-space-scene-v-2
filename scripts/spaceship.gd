@@ -528,3 +528,30 @@ func apply_texture_scale(scale_factor: float) -> void:
 	var sprite_node = $Sprite2D
 	if sprite_node:
 		sprite_node.scale = Vector2(scale_factor, scale_factor)
+
+
+## Set label X offset for right-facing ships and refresh position
+func set_label_offset_x_looking_right(offset: float) -> void:
+	label_offset_x_looking_right = offset
+	_refresh_label_position()
+
+
+## Set label X offset for left-facing ships and refresh position
+func set_label_offset_x_looking_left(offset: float) -> void:
+	label_offset_x_looking_left = offset
+	_refresh_label_position()
+
+
+## Refresh label position based on current direction and offsets
+func _refresh_label_position() -> void:
+	if not label_container:
+		return
+	
+	if direction < 0:
+		label_container.scale.x = -1
+		label_container.offset_left = label_offset_x_looking_left
+		label_container.offset_right = label_offset_x_looking_left + _label_width
+	else:
+		label_container.scale.x = 1
+		label_container.offset_left = label_offset_x_looking_right
+		label_container.offset_right = label_offset_x_looking_right + _label_width

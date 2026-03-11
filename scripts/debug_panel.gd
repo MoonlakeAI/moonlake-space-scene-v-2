@@ -31,6 +31,15 @@ const SHIP_TABLE_UPDATE_INTERVAL: float = 0.5  # Update every 0.5 seconds
 var _activity_dropdown: OptionButton
 var _selected_activity: int = 1  # 1 = STOP_AND_GO, 2 = LIGHT_SPEED_JUMP
 
+# Generated Ships Panel UI
+var _generated_ships_panel: PanelContainer
+var _generated_ships_container: VBoxContainer
+var _generated_ships_header: Button
+var _generated_ships_scroll: ScrollContainer
+var _generated_ships_grid: GridContainer
+var _generated_ships_visible: bool = true
+var _generator_panel: PanelContainer
+
 
 func _ready() -> void:
 	save_button.pressed.connect(_on_save_pressed)
@@ -63,6 +72,8 @@ func _unhandled_key_input(event: InputEvent) -> void:
 			visible = !visible
 			if _ship_table_panel:
 				_ship_table_panel.visible = visible
+			if _generated_ships_panel:
+				_generated_ships_panel.visible = visible
 			get_viewport().set_input_as_handled()
 
 
@@ -82,8 +93,21 @@ func _setup_references() -> void:
 			if _preview_spaceship:
 				print("[DebugPanel] Found PreviewSpaceship")
 	
+	# Find generator panel in ConsoleUI
+	var console_ui = get_parent()
+	if console_ui:
+		_generator_panel = console_ui.find_child("GeneratorPanel", true, false)
+		if _generator_panel:
+			print("[DebugPanel] Found GeneratorPanel")
+			# Connect to image_generated signal
+			if _generator_panel.has_signal("image_generated"):
+				_generator_panel.image_generated.connect(_on_ship_generated)
+	
 	# Create ship registry table after references are ready
 	_create_ship_registry_table()
+	
+	# Create generated ships panel
+	_create_generated_ships_panel()
 
 
 func _load_settings() -> void:
@@ -338,6 +362,18 @@ func _apply_setting(control_key: String) -> void:
 		"preview.position_y":
 			if _preview_spaceship and _preview_spaceship.has_method("set_position_y_ratio"):
 				_preview_spaceship.set_position_y_ratio(value)
+		"preview.label_offset_x":
+			if _preview_spaceship and _preview_spaceship.has_method("set_label_offset_x"):
+				_preview_spaceship.set_label_offset_x(value)
+		"preview.label_offset_y":
+			if _preview_spaceship and _preview_spaceship.has_method("set_label_offset_y"):
+				_preview_spaceship.set_label_offset_y(value)
+		"space_traffic.label_offset_x_looking_left":
+			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_left"):
+				_spaceship_traffic.set_all_ships_label_offset_left(value)
+		"space_traffic.label_offset_x_looking_right":
+			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_right"):
+				_spaceship_traffic.set_all_ships_label_offset_right(value)
 		_:
 			# Handle lane row settings dynamically
 			if _spaceship_traffic and control_key.begins_with("lane_"):
@@ -380,6 +416,18 @@ func _apply_setting_value(control_key: String, value: Variant) -> void:
 		"preview.position_y":
 			if _preview_spaceship and _preview_spaceship.has_method("set_position_y_ratio"):
 				_preview_spaceship.set_position_y_ratio(value)
+		"preview.label_offset_x":
+			if _preview_spaceship and _preview_spaceship.has_method("set_label_offset_x"):
+				_preview_spaceship.set_label_offset_x(value)
+		"preview.label_offset_y":
+			if _preview_spaceship and _preview_spaceship.has_method("set_label_offset_y"):
+				_preview_spaceship.set_label_offset_y(value)
+		"space_traffic.label_offset_x_looking_left":
+			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_left"):
+				_spaceship_traffic.set_all_ships_label_offset_left(value)
+		"space_traffic.label_offset_x_looking_right":
+			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_right"):
+				_spaceship_traffic.set_all_ships_label_offset_right(value)
 		_:
 			# Handle lane row settings dynamically
 			if _spaceship_traffic and control_key.begins_with("lane_"):
@@ -759,3 +807,176 @@ func _trigger_activity_on_ship(ship: Node) -> void:
 		2:  # LIGHT_SPEED_JUMP
 			if ship.has_method("_start_activity_light_speed_jump"):
 				ship._start_activity_light_speed_jump()
+
+
+# ============ GENERATED SHIPS PANEL ============
+
+func _create_generated_ships_panel() -> void:
+	"""Create a panel to track all generated ships with thumbnails."""
+	var canvas_layer = get_parent()
+	if not canvas_layer:
+		return
+	
+	# Create the panel container
+	_generated_ships_panel = PanelContainer.new()
+	_generated_ships_panel.name = "GeneratedShipsPanel"
+	
+	# Style the panel
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.02, 0.0, 0.05, 0.85)
+	panel_style.border_color = Color(0.6, 0.3, 0.8, 0.8)
+	panel_style.set_border_width_all(1)
+	panel_style.set_corner_radius_all(4)
+	panel_style.content_margin_left = 8
+	panel_style.content_margin_right = 8
+	panel_style.content_margin_top = 6
+	panel_style.content_margin_bottom = 6
+	_generated_ships_panel.add_theme_stylebox_override("panel", panel_style)
+	
+	# Position at bottom-left (below ship registry)
+	_generated_ships_panel.anchors_preset = Control.PRESET_BOTTOM_LEFT
+	_generated_ships_panel.offset_left = 15
+	_generated_ships_panel.offset_bottom = -15
+	_generated_ships_panel.offset_right = 280
+	_generated_ships_panel.offset_top = -220
+	
+	# Main container
+	_generated_ships_container = VBoxContainer.new()
+	_generated_ships_container.add_theme_constant_override("separation", 6)
+	_generated_ships_panel.add_child(_generated_ships_container)
+	
+	# Collapsible header button
+	_generated_ships_header = Button.new()
+	_generated_ships_header.text = "v GENERATED SHIPS (0)"
+	_generated_ships_header.flat = true
+	_generated_ships_header.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_generated_ships_header.add_theme_font_size_override("font_size", 13)
+	_generated_ships_header.add_theme_color_override("font_color", Color(0.7, 0.4, 0.9, 1.0))
+	_generated_ships_header.add_theme_color_override("font_hover_color", Color(0.85, 0.55, 1.0, 1.0))
+	_generated_ships_header.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	_generated_ships_header.pressed.connect(_on_generated_ships_toggle)
+	_generated_ships_container.add_child(_generated_ships_header)
+	
+	# Separator
+	var separator = HSeparator.new()
+	separator.add_theme_color_override("separation", Color(0.6, 0.3, 0.8, 0.5))
+	_generated_ships_container.add_child(separator)
+	
+	# Scroll container for the grid
+	_generated_ships_scroll = ScrollContainer.new()
+	_generated_ships_scroll.custom_minimum_size = Vector2(260, 150)
+	_generated_ships_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_generated_ships_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_generated_ships_container.add_child(_generated_ships_scroll)
+	
+	# Grid container for ship thumbnails
+	_generated_ships_grid = GridContainer.new()
+	_generated_ships_grid.columns = 3  # 3 thumbnails per row
+	_generated_ships_grid.add_theme_constant_override("h_separation", 8)
+	_generated_ships_grid.add_theme_constant_override("v_separation", 8)
+	_generated_ships_scroll.add_child(_generated_ships_grid)
+	
+	# Add to canvas layer
+	canvas_layer.add_child(_generated_ships_panel)
+	
+	# Start hidden (same as debug panel)
+	_generated_ships_panel.visible = false
+	
+	# Load any previously generated ships
+	_refresh_generated_ships_display()
+
+
+func _on_generated_ships_toggle() -> void:
+	"""Toggle generated ships panel content visibility."""
+	_generated_ships_visible = not _generated_ships_visible
+	
+	# Update header arrow
+	var count := 0
+	if _generator_panel and _generator_panel.has_method("get_generated_ships_count"):
+		count = _generator_panel.get_generated_ships_count()
+	
+	if _generated_ships_visible:
+		_generated_ships_header.text = "v GENERATED SHIPS (%d)" % count
+	else:
+		_generated_ships_header.text = "> GENERATED SHIPS (%d)" % count
+	
+	# Show/hide content (skip header at index 0)
+	for i in range(1, _generated_ships_container.get_child_count()):
+		_generated_ships_container.get_child(i).visible = _generated_ships_visible
+
+
+func _on_ship_generated(_path: String, _texture: Texture2D) -> void:
+	"""Called when a new ship is generated."""
+	print("[DebugPanel] Ship generated: %s" % _path)
+	_refresh_generated_ships_display()
+
+
+func _refresh_generated_ships_display() -> void:
+	"""Refresh the generated ships panel with current data."""
+	if not _generated_ships_grid or not _generator_panel:
+		return
+	
+	# Clear existing thumbnails
+	for child in _generated_ships_grid.get_children():
+		child.queue_free()
+	
+	# Get generated ships from generator
+	var ships: Array = []
+	if _generator_panel.has_method("get_generated_ships"):
+		ships = _generator_panel.get_generated_ships()
+	
+	# Update header count
+	if _generated_ships_visible:
+		_generated_ships_header.text = "v GENERATED SHIPS (%d)" % ships.size()
+	else:
+		_generated_ships_header.text = "> GENERATED SHIPS (%d)" % ships.size()
+	
+	# Add thumbnail for each ship (newest first)
+	for i in range(ships.size() - 1, -1, -1):
+		var ship_data: Dictionary = ships[i]
+		var texture: Texture2D = ship_data.get("texture")
+		var timestamp: String = ship_data.get("timestamp", "")
+		var prompt: String = ship_data.get("prompt", "")
+		
+		if texture:
+			_add_ship_thumbnail(texture, timestamp, prompt, ships.size() - i)
+
+
+func _add_ship_thumbnail(texture: Texture2D, timestamp: String, prompt: String, index: int) -> void:
+	"""Add a thumbnail entry for a generated ship."""
+	var container = VBoxContainer.new()
+	container.add_theme_constant_override("separation", 2)
+	
+	# Thumbnail panel with border
+	var thumb_panel = PanelContainer.new()
+	var thumb_style = StyleBoxFlat.new()
+	thumb_style.bg_color = Color(0.05, 0.02, 0.08, 0.9)
+	thumb_style.border_color = Color(0.5, 0.3, 0.7, 0.7)
+	thumb_style.set_border_width_all(1)
+	thumb_style.set_corner_radius_all(3)
+	thumb_panel.add_theme_stylebox_override("panel", thumb_style)
+	thumb_panel.custom_minimum_size = Vector2(75, 50)
+	container.add_child(thumb_panel)
+	
+	# Texture rect for the ship image
+	var tex_rect = TextureRect.new()
+	tex_rect.texture = texture
+	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.custom_minimum_size = Vector2(75, 50)
+	thumb_panel.add_child(tex_rect)
+	
+	# Index label
+	var index_label = Label.new()
+	index_label.text = "#%d" % index
+	index_label.add_theme_font_size_override("font_size", 9)
+	index_label.add_theme_color_override("font_color", Color(0.6, 0.5, 0.8, 0.9))
+	index_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	container.add_child(index_label)
+	
+	# Set tooltip with full info
+	var time_part := timestamp.split("T")[1] if "T" in timestamp else timestamp
+	time_part = time_part.split(".")[0] if "." in time_part else time_part
+	container.tooltip_text = "Generated at: %s\nPrompt: %s" % [time_part, prompt]
+	
+	_generated_ships_grid.add_child(container)
