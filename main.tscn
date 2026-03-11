@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://dt4eee5lq1h4s" path="res://scripts/preview_spaceship.gd" id="16_preview"]
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="17_holo_shader"]
 [ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="18_label_bg_shader"]
+[ext_resource type="FontFile" uid="uid://b8il6578g5cev" path="res://assets/fonts/Space_Grotesk/static/SpaceGrotesk-Medium.ttf" id="19_font"]
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -70,6 +71,10 @@ shader_parameter/outer_color = Color(0.1, 0.4, 0.9, 1)
 shader_parameter/atmosphere_density = 2.5
 shader_parameter/falloff = 4.5
 shader_parameter/glow_intensity = 1.0
+
+[sub_resource type="FontVariation" id="FontVariation_preview_spaced"]
+base_font = ExtResource("19_font")
+spacing_glyph = 3
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_preview_label_bg"]
 shader = ExtResource("18_label_bg_shader")
@@ -292,6 +297,7 @@ alignment = 1
 material = SubResource("ShaderMaterial_preview_holo")
 layout_mode = 2
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
+theme_override_fonts/font = SubResource("FontVariation_preview_spaced")
 theme_override_font_sizes/font_size = 22
 text = "AWAITING DESIGNATION"
 horizontal_alignment = 1
