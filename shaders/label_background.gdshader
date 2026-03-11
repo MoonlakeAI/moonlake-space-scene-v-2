@@ -9,7 +9,7 @@ void fragment() {
 	vec2 uv = UV - center;
 	
 	// Elliptical distance for better horizontal fade
-	float dist = length(vec2(uv.x * 0.8, uv.y * 1.2));
+	float dist = length(vec2(uv.x * 1.4, uv.y * 1.5));
 	
 	// Fade from center to edges
 	float alpha = center_color.a * (1.0 - smoothstep(0.0, 0.5, dist * fade_strength));

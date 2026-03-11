@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://rtscgxa2lnm2" path="res://scripts/spaceship.gd" id="1_spaceship"]
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="2_shader"]
-[ext_resource type="Shader" path="res://shaders/label_background.gdshader" id="3_label_bg_shader"]
+[ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="3_label_bg_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_label_bg"]
 shader = ExtResource("3_label_bg_shader")

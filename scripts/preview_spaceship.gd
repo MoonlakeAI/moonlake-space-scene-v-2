@@ -17,8 +17,8 @@ const SHIP_TEXTURES: Array[String] = [
 	"res://assets/images/spaceships/nimble_transport.png"
 ]
 
-const DEFAULT_NAME := "AWAITING DESIGNATION"
-const DEFAULT_ROLE := "Unassigned"
+const DEFAULT_NAME := ""
+const DEFAULT_ROLE := ""
 
 @export var preview_scale: float = 0.8  ## Scale of the preview ship
 @export var label_offset_y: float = 0.0  ## Vertical offset for labels (0 = centered on ship)
@@ -47,7 +47,7 @@ const BOB_SPEED: float = 0.2  ## Cycles per second (slow and dreamy)
 var _generator_panel: PanelContainer
 var _console_panel: PanelContainer
 var _name_input: LineEdit
-var _role_input: LineEdit
+var _role_input: OptionButton
 var _loaded_textures: Array[Texture2D] = []
 var _current_index: int = 0
 var _position_y_ratio: float = 0.9  ## Y position as ratio of screen height (0.9 = 90% from top)
@@ -141,7 +141,7 @@ func _find_console_panel() -> void:
 			if _name_input:
 				_name_input.text_changed.connect(_on_name_changed)
 			if _role_input:
-				_role_input.text_changed.connect(_on_role_changed)
+				_role_input.item_selected.connect(_on_role_changed)
 
 
 func _on_name_changed(new_text: String) -> void:
@@ -155,14 +155,15 @@ func _on_name_changed(new_text: String) -> void:
 			name_label.text = new_text.to_upper()
 
 
-func _on_role_changed(new_text: String) -> void:
+func _on_role_changed(index: int) -> void:
 	if _state != State.IDLE:
 		return
-	if role_label:
-		if new_text.strip_edges().is_empty():
+	if role_label and _role_input:
+		var role_text := _role_input.get_item_text(index)
+		if role_text.strip_edges().is_empty():
 			role_label.text = DEFAULT_ROLE
 		else:
-			role_label.text = new_text
+			role_label.text = role_text
 
 
 ## Trigger the launch animation sequence
