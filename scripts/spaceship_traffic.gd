@@ -92,6 +92,13 @@ var viewport_size: Vector2
 var ship_registry: Array[Dictionary] = []
 var _next_ship_id: int = 0
 
+# ============ SEQUENTIAL SPAWN SYSTEM ============
+# Tracks next spawn position for launched ships
+# Cycles: 1.1 -> 2.1 -> 2.2 -> 3.1 -> 3.2 -> 3.3 -> 3.4 -> 1.1...
+var _current_spawn_lane: int = 0      # 0-indexed lane
+var _current_spawn_row: int = 0       # 0-indexed row within lane
+var _current_spawn_direction: int = 1 # 1 = left-to-right, -1 = right-to-left
+
 # ============ DETERMINISTIC SHIP CONFIGURATIONS ============
 # Pre-defined ship configurations for deterministic spawning
 # Each config: { name, role, lane, row, direction, texture_index, speed_index }
@@ -277,9 +284,13 @@ func spawn_random_ship() -> int:
 	
 	# Track which lane this ship belongs to
 	ship.lane_index = lane_index
+	ship.row_index = row_index
 	
 	# Set despawn offset
 	ship.spawn_margin = despawn_offset
+	
+	# Connect to journey completion signal
+	ship.journey_completed.connect(_on_ship_journey_completed)
 	
 	add_child(ship)
 	
@@ -325,7 +336,11 @@ func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship
 	ship.apply_texture_scale(spaceship_scale)
 	ship.modulate.a = 1.0
 	ship.lane_index = lane_index
+	ship.row_index = row_index
 	ship.spawn_margin = despawn_offset
+	
+	# Connect to journey completion signal
+	ship.journey_completed.connect(_on_ship_journey_completed)
 	
 	add_child(ship)
 	
@@ -335,6 +350,52 @@ func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship
 	ship.set_meta("ship_id", ship_id)
 	
 	return ship
+
+
+# ============ JOURNEY COMPLETION HANDLING ============
+
+func _on_ship_journey_completed(ship: Spaceship) -> void:
+	"""Handle ship completing its journey - transition to next lane."""
+	if not is_instance_valid(ship):
+		return
+	
+	# Calculate next lane (cycle: 0 -> 1 -> 2 -> 0...)
+	var current_lane = ship.lane_index
+	var next_lane = (current_lane + 1) % lanes.size()
+	
+	# Pick random row in next lane
+	var next_lane_config = lanes[next_lane]
+	var rows: Array = next_lane_config["rows"]
+	var next_row = randi() % rows.size()
+	var row_y_ratio: float = rows[next_row]
+	
+	# Get lane properties
+	var new_depth = next_lane_config["depth"]
+	var new_speed = next_lane_config["speed"]
+	
+	# Transition ship to new lane (direction flips automatically)
+	ship.transition_to_lane(next_lane, next_row, row_y_ratio, new_depth, new_speed)
+	
+	# Update registry entry
+	_update_ship_registry_entry(ship, next_lane, next_row, ship.direction)
+	
+	print("[SpaceshipTraffic] Ship '%s' transitioned to Lane %d.%d, dir=%d" % [
+		ship.ship_name, next_lane + 1, next_row + 1, ship.direction])
+
+
+func _update_ship_registry_entry(ship: Spaceship, lane: int, row: int, direction: int) -> void:
+	"""Update a ship's registry entry after lane transition."""
+	var ship_id = ship.get_meta("ship_id", -1)
+	if ship_id < 0:
+		return
+	
+	for entry in ship_registry:
+		if entry["id"] == ship_id:
+			entry["lane"] = lane
+			entry["row"] = row
+			entry["direction"] = direction
+			registry_updated.emit()
+			return
 
 
 # ============ REGISTRY MANAGEMENT ============
@@ -424,7 +485,7 @@ func get_registry_as_json() -> String:
 	
 	for entry in ship_registry:
 		var ship = entry["ship_ref"] as Spaceship
-		var ship_data := {
+		var entry_data := {
 			"id": entry["id"],
 			"name": entry["name"],
 			"role": entry["role"],
@@ -435,10 +496,10 @@ func get_registry_as_json() -> String:
 			"speed_index": entry["speed_index"],
 		}
 		if is_instance_valid(ship):
-			ship_data["position_x"] = ship.position.x
-			ship_data["position_y"] = ship.position.y
-			ship_data["current_speed"] = ship.current_speed
-		data["ships"].append(ship_data)
+			entry_data["position_x"] = ship.position.x
+			entry_data["position_y"] = ship.position.y
+			entry_data["current_speed"] = ship.current_speed
+		data["ships"].append(entry_data)
 	
 	return JSON.stringify(data, "\t")
 
@@ -572,52 +633,102 @@ func generate_default_configurations(count: int = 15) -> Array[Dictionary]:
 	return configs
 
 func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D = null) -> Spaceship:
-	"""Spawn a ship from player input - always spawns in Lane 1 (closest)"""
+	"""Spawn a launched ship using sequential lane system.
+	Cycles through: 1.1 -> 2.1 -> 2.2 -> 3.1 -> 3.2 -> 3.3 -> 3.4 -> 1.1...
+	Direction flips each time the lane changes."""
 	if not spaceship_scene:
-		return null
-	
-	# Use provided texture, or fall back to random from array
-	var selected_texture: Texture2D = texture
-	var texture_index: int = -1  # -1 indicates custom texture
-	if selected_texture == null and not spaceship_textures.is_empty():
-		texture_index = randi() % spaceship_textures.size()
-		selected_texture = spaceship_textures[texture_index]
-	
-	if selected_texture == null:
-		push_warning("SpaceshipTraffic: No texture available for player ship")
+		push_warning("SpaceshipTraffic: Missing spaceship_scene")
 		return null
 	
 	var ship = spaceship_scene.instantiate() as Spaceship
 	if not ship:
 		return null
 	
-	# Use Lane 1 (index 0) - the closest lane for player ships
-	var lane_index: int = 0
+	# Use current spawn position
+	var lane_index = _current_spawn_lane
+	var row_index = _current_spawn_row
+	var direction = _current_spawn_direction
+	
 	var lane_config = lanes[lane_index]
 	var rows: Array = lane_config["rows"]
-	var row_index: int = rows.size() - 1  # Use the bottom row of Lane 1
 	var row_y_ratio: float = rows[row_index]
 	
-	# Always enter from the right, moving left (flipped direction)
-	var direction = -1
-	var y_pos = viewport_size.y * row_y_ratio
-	var x_pos: float = viewport_size.x + spawn_offset
+	# Use the preview texture if provided, otherwise fall back to random
+	var selected_texture: Texture2D = texture
+	var texture_index: int = -1
+	if selected_texture == null and not spaceship_textures.is_empty():
+		texture_index = randi() % spaceship_textures.size()
+		selected_texture = spaceship_textures[texture_index]
 	
+	if selected_texture == null:
+		push_warning("SpaceshipTraffic: No texture available")
+		ship.queue_free()
+		return null
+	
+	# Calculate spawn position based on direction
+	var y_pos = viewport_size.y * row_y_ratio
+	var x_pos: float
+	if direction > 0:
+		x_pos = -spawn_offset  # Enter from left
+	else:
+		x_pos = viewport_size.x + spawn_offset  # Enter from right
+	
+	# Setup ship
 	ship.setup(ship_name, ship_role, direction, lane_config["depth"], lane_config["speed"])
-	ship.set_movement_behavior(0.0, 0.0, 0.0)  # Steady movement for player ships
+	ship.set_movement_behavior(0.0, 0.0, 0.0)  # Steady movement
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)
 	ship.apply_texture_scale(spaceship_scale)
-	ship.modulate.a = 1.0  # Full opacity for player ships
+	ship.modulate.a = 1.0
 	ship.lane_index = lane_index
+	ship.row_index = row_index
 	ship.spawn_margin = despawn_offset
+	
+	# Connect to journey completion signal
+	ship.journey_completed.connect(_on_ship_journey_completed)
 	
 	add_child(ship)
 	
-	# Register player ship in registry
+	# Register in registry
 	var ship_id = _register_ship(ship, lane_index, row_index, direction, 
 		ship_name, ship_role, texture_index, -1)
 	ship.set_meta("ship_id", ship_id)
-	ship.set_meta("is_player_ship", true)
+	
+	print("[SpaceshipTraffic] Launched '%s' at Lane %d.%d, dir=%d" % [ship_name, lane_index + 1, row_index + 1, direction])
+	
+	# Advance to next spawn position
+	_advance_spawn_position()
 	
 	return ship
+
+
+func _advance_spawn_position() -> void:
+	"""Advance to next spawn position in sequence.
+	Order: 1.1 -> 2.1 -> 2.2 -> 3.1 -> 3.2 -> 3.3 -> 3.4 -> 1.1...
+	Direction flips when lane changes."""
+	var rows: Array = lanes[_current_spawn_lane]["rows"]
+	
+	# Move to next row
+	_current_spawn_row += 1
+	
+	# If we've exhausted rows in current lane, move to next lane
+	if _current_spawn_row >= rows.size():
+		_current_spawn_row = 0
+		_current_spawn_lane += 1
+		
+		# If we've exhausted all lanes, cycle back to lane 0
+		if _current_spawn_lane >= lanes.size():
+			_current_spawn_lane = 0
+		
+		# Flip direction when lane changes
+		_current_spawn_direction *= -1
+	
+	print("[SpaceshipTraffic] Next spawn: Lane %d.%d, dir=%d" % [_current_spawn_lane + 1, _current_spawn_row + 1, _current_spawn_direction])
+
+
+func reset_spawn_position() -> void:
+	"""Reset spawn position back to Lane 1, Row 1, left-to-right."""
+	_current_spawn_lane = 0
+	_current_spawn_row = 0
+	_current_spawn_direction = 1
+	print("[SpaceshipTraffic] Spawn position reset to Lane 1.1, dir=1")

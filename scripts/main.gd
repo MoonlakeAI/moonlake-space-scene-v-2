@@ -18,4 +18,6 @@ func _ready() -> void:
 
 func _on_ship_launched(ship_name: String, ship_role: String, texture: Texture2D) -> void:
 	if spaceship_traffic:
+		# Delay before ship appears in traffic lanes
+		await get_tree().create_timer(2.0).timeout
 		spaceship_traffic.spawn_player_ship(ship_name, ship_role, texture)

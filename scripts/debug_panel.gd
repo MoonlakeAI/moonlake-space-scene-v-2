@@ -516,7 +516,7 @@ func _create_ship_registry_table() -> void:
 	
 	# Grid container for ship data
 	_ship_table_grid = GridContainer.new()
-	_ship_table_grid.columns = 5  # ID, Name, Lane, Dir, Pos X
+	_ship_table_grid.columns = 6  # ID, Name, Lane, Row, Dir, Pos X
 	_ship_table_grid.add_theme_constant_override("h_separation", 10)
 	_ship_table_grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_ship_table_grid)
@@ -540,8 +540,8 @@ func _create_ship_registry_table() -> void:
 
 func _add_table_header() -> void:
 	"""Add header row to the ship table grid."""
-	var headers = ["ID", "Name", "Lane", "Dir", "Pos X"]
-	var widths = [30, 100, 40, 35, 60]
+	var headers = ["ID", "Name", "Lane", "Row", "Dir", "Pos X"]
+	var widths = [30, 90, 35, 30, 30, 55]
 	
 	for i in range(headers.size()):
 		var label = Label.new()
@@ -577,15 +577,18 @@ func _update_ship_registry_table() -> void:
 	if _spaceship_traffic.has_method("get_ship_registry"):
 		registry = _spaceship_traffic.get_ship_registry()
 	
+	# Sort by lane (highest to lowest), then by row
+	registry.sort_custom(_sort_ships_by_lane_desc)
+	
 	# Update summary
 	var summary_label = _ship_table_container.get_node_or_null("SummaryLabel")
 	if summary_label and _spaceship_traffic.has_method("get_lane_counts"):
 		var counts = _spaceship_traffic.get_lane_counts()
 		summary_label.text = "Lane 1: %d | Lane 2: %d | Lane 3: %d | Total: %d" % [counts[0], counts[1], counts[2], registry.size()]
 	
-	# Clear existing rows (keep header - first 5 children)
-	while _ship_table_grid.get_child_count() > 5:
-		var child = _ship_table_grid.get_child(5)
+	# Clear existing rows (keep header - first 6 children)
+	while _ship_table_grid.get_child_count() > 6:
+		var child = _ship_table_grid.get_child(6)
 		_ship_table_grid.remove_child(child)
 		child.queue_free()
 	
@@ -600,12 +603,13 @@ func _update_ship_registry_table() -> void:
 		var ship_id = ship_data.get("id", -1)
 		var ship_name = ship_data.get("name", "???")
 		var lane = ship_data.get("lane", -1)
+		var row = ship_data.get("row", -1)
 		var direction = ship_data.get("direction", 0)
 		var pos: Vector2 = ship_data.get("position", Vector2.ZERO)
 		
 		# Truncate name if too long
-		if ship_name.length() > 12:
-			ship_name = ship_name.substr(0, 10) + ".."
+		if ship_name.length() > 10:
+			ship_name = ship_name.substr(0, 8) + ".."
 		
 		var lane_color = lane_colors[lane] if lane >= 0 and lane < 3 else Color.WHITE
 		
@@ -630,15 +634,23 @@ func _update_ship_registry_table() -> void:
 		lane_label.text = str(lane + 1)  # Display as 1-indexed
 		lane_label.add_theme_font_size_override("font_size", 10)
 		lane_label.add_theme_color_override("font_color", lane_color)
-		lane_label.custom_minimum_size.x = 40
+		lane_label.custom_minimum_size.x = 35
 		_ship_table_grid.add_child(lane_label)
+		
+		# Row
+		var row_label = Label.new()
+		row_label.text = str(row + 1)  # Display as 1-indexed
+		row_label.add_theme_font_size_override("font_size", 10)
+		row_label.add_theme_color_override("font_color", lane_color)
+		row_label.custom_minimum_size.x = 30
+		_ship_table_grid.add_child(row_label)
 		
 		# Direction
 		var dir_label = Label.new()
 		dir_label.text = ">" if direction > 0 else "<"
 		dir_label.add_theme_font_size_override("font_size", 10)
 		dir_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.9, 0.9))
-		dir_label.custom_minimum_size.x = 35
+		dir_label.custom_minimum_size.x = 30
 		_ship_table_grid.add_child(dir_label)
 		
 		# Position X
@@ -646,5 +658,17 @@ func _update_ship_registry_table() -> void:
 		pos_label.text = "%.0f" % pos.x
 		pos_label.add_theme_font_size_override("font_size", 10)
 		pos_label.add_theme_color_override("font_color", Color(0.5, 0.7, 0.8, 0.8))
-		pos_label.custom_minimum_size.x = 60
+		pos_label.custom_minimum_size.x = 55
 		_ship_table_grid.add_child(pos_label)
+
+
+func _sort_ships_by_lane_desc(a: Dictionary, b: Dictionary) -> bool:
+	"""Sort ships by lane (highest first), then by row."""
+	var lane_a = a.get("lane", 0)
+	var lane_b = b.get("lane", 0)
+	if lane_a != lane_b:
+		return lane_a > lane_b  # Higher lane first
+	# Same lane, sort by row
+	var row_a = a.get("row", 0)
+	var row_b = b.get("row", 0)
+	return row_a < row_b  # Lower row first within same lane
