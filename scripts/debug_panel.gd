@@ -27,6 +27,10 @@ var _ship_table_visible: bool = true
 var _update_timer: float = 0.0
 const SHIP_TABLE_UPDATE_INTERVAL: float = 0.5  # Update every 0.5 seconds
 
+# Activity controls
+var _activity_dropdown: OptionButton
+var _selected_activity: int = 1  # 1 = STOP_AND_GO, 2 = LIGHT_SPEED_JUMP
+
 
 func _ready() -> void:
 	save_button.pressed.connect(_on_save_pressed)
@@ -507,17 +511,44 @@ func _create_ship_registry_table() -> void:
 	summary_label.text = "Lane 1: 0 | Lane 2: 0 | Lane 3: 0"
 	_ship_table_container.add_child(summary_label)
 	
+	# Activity control row
+	var activity_row = HBoxContainer.new()
+	activity_row.add_theme_constant_override("separation", 8)
+	_ship_table_container.add_child(activity_row)
+	
+	var activity_label = Label.new()
+	activity_label.text = "Activity:"
+	activity_label.add_theme_font_size_override("font_size", 10)
+	activity_label.add_theme_color_override("font_color", Color(0.5, 0.75, 0.8, 0.9))
+	activity_row.add_child(activity_label)
+	
+	_activity_dropdown = OptionButton.new()
+	_activity_dropdown.add_theme_font_size_override("font_size", 10)
+	_activity_dropdown.custom_minimum_size.x = 120
+	_activity_dropdown.add_item("StopAndGo", 1)
+	_activity_dropdown.add_item("LightSpeedJump", 2)
+	_activity_dropdown.selected = 0
+	_activity_dropdown.item_selected.connect(_on_activity_selected)
+	activity_row.add_child(_activity_dropdown)
+	
+	var trigger_all_btn = Button.new()
+	trigger_all_btn.text = "Trigger All"
+	trigger_all_btn.add_theme_font_size_override("font_size", 9)
+	trigger_all_btn.custom_minimum_size = Vector2(70, 20)
+	trigger_all_btn.pressed.connect(_on_trigger_all_activities)
+	activity_row.add_child(trigger_all_btn)
+	
 	# Scroll container for the grid
 	var scroll = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(320, 280)
+	scroll.custom_minimum_size = Vector2(350, 250)
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_ship_table_container.add_child(scroll)
 	
 	# Grid container for ship data
 	_ship_table_grid = GridContainer.new()
-	_ship_table_grid.columns = 6  # ID, Name, Lane, Row, Dir, Pos X
-	_ship_table_grid.add_theme_constant_override("h_separation", 10)
+	_ship_table_grid.columns = 7  # ID, Name, Lane, Row, Dir, Pos X, Action
+	_ship_table_grid.add_theme_constant_override("h_separation", 6)
 	_ship_table_grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_ship_table_grid)
 	
@@ -540,8 +571,8 @@ func _create_ship_registry_table() -> void:
 
 func _add_table_header() -> void:
 	"""Add header row to the ship table grid."""
-	var headers = ["ID", "Name", "Lane", "Row", "Dir", "Pos X"]
-	var widths = [30, 90, 35, 30, 30, 55]
+	var headers = ["ID", "Name", "Lane", "Row", "Dir", "X", "Act"]
+	var widths = [25, 80, 30, 28, 25, 45, 35]
 	
 	for i in range(headers.size()):
 		var label = Label.new()
@@ -586,9 +617,9 @@ func _update_ship_registry_table() -> void:
 		var counts = _spaceship_traffic.get_lane_counts()
 		summary_label.text = "Lane 1: %d | Lane 2: %d | Lane 3: %d | Total: %d" % [counts[0], counts[1], counts[2], registry.size()]
 	
-	# Clear existing rows (keep header - first 6 children)
-	while _ship_table_grid.get_child_count() > 6:
-		var child = _ship_table_grid.get_child(6)
+	# Clear existing rows (keep header - first 7 children)
+	while _ship_table_grid.get_child_count() > 7:
+		var child = _ship_table_grid.get_child(7)
 		_ship_table_grid.remove_child(child)
 		child.queue_free()
 	
@@ -618,7 +649,7 @@ func _update_ship_registry_table() -> void:
 		id_label.text = str(ship_id)
 		id_label.add_theme_font_size_override("font_size", 10)
 		id_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.9, 0.9))
-		id_label.custom_minimum_size.x = 30
+		id_label.custom_minimum_size.x = 25
 		_ship_table_grid.add_child(id_label)
 		
 		# Name
@@ -626,7 +657,7 @@ func _update_ship_registry_table() -> void:
 		name_label.text = ship_name
 		name_label.add_theme_font_size_override("font_size", 10)
 		name_label.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0, 0.95))
-		name_label.custom_minimum_size.x = 100
+		name_label.custom_minimum_size.x = 80
 		_ship_table_grid.add_child(name_label)
 		
 		# Lane (color-coded)
@@ -634,7 +665,7 @@ func _update_ship_registry_table() -> void:
 		lane_label.text = str(lane + 1)  # Display as 1-indexed
 		lane_label.add_theme_font_size_override("font_size", 10)
 		lane_label.add_theme_color_override("font_color", lane_color)
-		lane_label.custom_minimum_size.x = 35
+		lane_label.custom_minimum_size.x = 30
 		_ship_table_grid.add_child(lane_label)
 		
 		# Row
@@ -642,7 +673,7 @@ func _update_ship_registry_table() -> void:
 		row_label.text = str(row + 1)  # Display as 1-indexed
 		row_label.add_theme_font_size_override("font_size", 10)
 		row_label.add_theme_color_override("font_color", lane_color)
-		row_label.custom_minimum_size.x = 30
+		row_label.custom_minimum_size.x = 28
 		_ship_table_grid.add_child(row_label)
 		
 		# Direction
@@ -650,7 +681,7 @@ func _update_ship_registry_table() -> void:
 		dir_label.text = ">" if direction > 0 else "<"
 		dir_label.add_theme_font_size_override("font_size", 10)
 		dir_label.add_theme_color_override("font_color", Color(0.6, 0.8, 0.9, 0.9))
-		dir_label.custom_minimum_size.x = 30
+		dir_label.custom_minimum_size.x = 25
 		_ship_table_grid.add_child(dir_label)
 		
 		# Position X
@@ -658,8 +689,16 @@ func _update_ship_registry_table() -> void:
 		pos_label.text = "%.0f" % pos.x
 		pos_label.add_theme_font_size_override("font_size", 10)
 		pos_label.add_theme_color_override("font_color", Color(0.5, 0.7, 0.8, 0.8))
-		pos_label.custom_minimum_size.x = 55
+		pos_label.custom_minimum_size.x = 45
 		_ship_table_grid.add_child(pos_label)
+		
+		# Action button
+		var action_btn = Button.new()
+		action_btn.text = "Go"
+		action_btn.add_theme_font_size_override("font_size", 9)
+		action_btn.custom_minimum_size = Vector2(35, 18)
+		action_btn.pressed.connect(_on_trigger_activity.bind(ship_id))
+		_ship_table_grid.add_child(action_btn)
 
 
 func _sort_ships_by_lane_desc(a: Dictionary, b: Dictionary) -> bool:
@@ -672,3 +711,51 @@ func _sort_ships_by_lane_desc(a: Dictionary, b: Dictionary) -> bool:
 	var row_a = a.get("row", 0)
 	var row_b = b.get("row", 0)
 	return row_a < row_b  # Lower row first within same lane
+
+
+func _on_activity_selected(index: int) -> void:
+	"""Handle activity dropdown selection."""
+	_selected_activity = _activity_dropdown.get_item_id(index)
+
+
+func _on_trigger_activity(ship_id: int) -> void:
+	"""Trigger the selected activity on a specific ship."""
+	if not _spaceship_traffic:
+		return
+	
+	# Find the ship in the registry
+	var registry = _spaceship_traffic.get_ship_registry()
+	for entry in registry:
+		if entry.get("id") == ship_id:
+			var ship = entry.get("ship_ref")
+			if ship and is_instance_valid(ship):
+				_trigger_activity_on_ship(ship)
+			return
+
+
+func _on_trigger_all_activities() -> void:
+	"""Trigger the selected activity on all ships."""
+	if not _spaceship_traffic:
+		return
+	
+	var registry = _spaceship_traffic.get_ship_registry()
+	for entry in registry:
+		var ship = entry.get("ship_ref")
+		if ship and is_instance_valid(ship):
+			# Small delay between each to stagger the effect
+			_trigger_activity_on_ship(ship)
+
+
+func _trigger_activity_on_ship(ship: Node) -> void:
+	"""Trigger the selected activity on a ship."""
+	# Check if ship already has an activity running
+	if ship.activity != 0:  # 0 = Activity.NONE
+		return
+	
+	match _selected_activity:
+		1:  # STOP_AND_GO
+			if ship.has_method("_start_activity_stop_and_go"):
+				ship._start_activity_stop_and_go()
+		2:  # LIGHT_SPEED_JUMP
+			if ship.has_method("_start_activity_light_speed_jump"):
+				ship._start_activity_light_speed_jump()
