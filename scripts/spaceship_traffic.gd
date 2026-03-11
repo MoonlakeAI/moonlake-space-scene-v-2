@@ -15,6 +15,9 @@ signal registry_updated()
 @export var min_ships: int = 12
 @export var max_ships: int = 18
 @export var debug_show_layers: bool = false  ## Enable to show colored lane regions
+@export var ship_min_speed: float = 20.0   ## Minimum speed ships can have
+@export var ship_max_speed: float = 200.0  ## Maximum speed ships can have
+@export var speed_randomization: float = 0.3  ## How much to randomize speed (0.3 = ±30%)
 
 # Debug colors for each lane (Lane 1 = closest, Lane 3 = farthest)
 var debug_colors: Array[Color] = [
@@ -231,6 +234,13 @@ func set_lane_row_position(lane_index: int, row_index: int, y_ratio: float) -> v
 	print("[SpaceshipTraffic] Lane %d Row %d set to: %.2f" % [lane_index + 1, row_index + 1, y_ratio])
 
 
+func _randomize_speed(base_speed: float) -> float:
+	"""Randomize speed within the configured range, clamped to min/max limits."""
+	var variation = base_speed * speed_randomization
+	var randomized = base_speed + randf_range(-variation, variation)
+	return clampf(randomized, ship_min_speed, ship_max_speed)
+
+
 func spawn_initial_ships() -> void:
 	var ship_count = randi_range(min_ships, max_ships)
 	var lane_counts = [0, 0, 0]  # Track ships per lane for debugging
@@ -294,11 +304,14 @@ func spawn_random_ship() -> int:
 	# Random X starting position
 	var x_pos = randf_range(0, viewport_size.x)
 	
-	# Calculate final speed with multiplier
+	# Calculate final speed with multiplier and randomization
 	var base_speed = lane_config["speed"] * speed_behavior[0]
+	var randomized_speed = _randomize_speed(base_speed)
 	
 	# Setup ship with movement parameters
-	ship.setup(data[0], data[1], direction, lane_config["depth"], base_speed)
+	ship.setup(data[0], data[1], direction, lane_config["depth"], randomized_speed)
+	ship.min_speed = ship_min_speed
+	ship.max_speed = ship_max_speed
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)
@@ -349,12 +362,15 @@ func spawn_ship_at_lane(lane_index: int, row_index: int, ship_name: String, ship
 	var speed_index = randi() % speeds_data.size()
 	var speed_behavior = speeds_data[speed_index]
 	var base_speed = lane_config["speed"] * speed_behavior[0]
+	var randomized_speed = _randomize_speed(base_speed)
 	
 	var direction = 1 if randf() > 0.5 else -1
 	var y_pos = viewport_size.y * row_y_ratio
 	var x_pos: float = -spawn_offset if direction > 0 else viewport_size.x + spawn_offset
 	
-	ship.setup(ship_name, ship_role, direction, lane_config["depth"], base_speed)
+	ship.setup(ship_name, ship_role, direction, lane_config["depth"], randomized_speed)
+	ship.min_speed = ship_min_speed
+	ship.max_speed = ship_max_speed
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)
@@ -599,9 +615,12 @@ func _spawn_ship_from_config(config: Dictionary, config_index: int) -> Spaceship
 	# Get speed behavior
 	var speed_behavior = speeds_data[speed_index]
 	var base_speed = lane_config["speed"] * speed_behavior[0]
+	var randomized_speed = _randomize_speed(base_speed)
 	
 	# Setup ship
-	ship.setup(ship_name, ship_role, direction, lane_config["depth"], base_speed)
+	ship.setup(ship_name, ship_role, direction, lane_config["depth"], randomized_speed)
+	ship.min_speed = ship_min_speed
+	ship.max_speed = ship_max_speed
 	ship.set_movement_behavior(speed_behavior[1], speed_behavior[2], speed_behavior[3])
 	ship.position = Vector2(x_pos, y_pos)
 	if selected_texture:
@@ -698,8 +717,11 @@ func spawn_player_ship(ship_name: String, ship_role: String, texture: Texture2D 
 	else:
 		x_pos = viewport_size.x + spawn_offset  # Enter from right
 	
-	# Setup ship
-	ship.setup(ship_name, ship_role, direction, lane_config["depth"], lane_config["speed"])
+	# Setup ship with randomized speed
+	var randomized_speed = _randomize_speed(lane_config["speed"])
+	ship.setup(ship_name, ship_role, direction, lane_config["depth"], randomized_speed)
+	ship.min_speed = ship_min_speed
+	ship.max_speed = ship_max_speed
 	ship.set_movement_behavior(0.0, 0.0, 0.0)  # Steady movement
 	ship.position = Vector2(x_pos, y_pos)
 	ship.set_texture(selected_texture)

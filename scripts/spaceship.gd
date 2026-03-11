@@ -7,7 +7,7 @@ extends Node2D
 signal journey_completed(ship: Spaceship)  # Emitted when ship exits screen
 
 # Activity types
-enum Activity { NONE, STOP_AND_GO, LIGHT_SPEED_JUMP }
+enum Activity { NONE, STOP_AND_GO, LIGHT_SPEED_JUMP, ACCELERATE, DECELERATE }
 
 # Activity map - defines available activities and their weights
 const ACTIVITY_MAP: Dictionary = {
@@ -23,6 +23,18 @@ const ACTIVITY_MAP: Dictionary = {
 		"min_progress": 0.15,    # Can trigger earlier
 		"max_progress": 0.6,     # Must trigger before 60% (needs room to jump)
 	},
+	Activity.ACCELERATE: {
+		"name": "Accelerate",
+		"weight": 1.0,           # Equal chance with others
+		"min_progress": 0.1,     # Can trigger early
+		"max_progress": 0.7,     # Don't trigger too late
+	},
+	Activity.DECELERATE: {
+		"name": "Decelerate",
+		"weight": 1.0,           # Equal chance with others
+		"min_progress": 0.1,     # Can trigger early
+		"max_progress": 0.7,     # Don't trigger too late
+	},
 }
 
 # Chance that an activity will occur during a lane (0.0 - 1.0)
@@ -34,6 +46,8 @@ const ACTIVITY_CHANCE: float = 0.4
 @export var direction: int = 1  # 1 = right, -1 = left
 @export var layer_depth: float = 1.0  # Affects scale and speed (bigger = closer/faster)
 @export var show_labels: bool = true
+@export var min_speed: float = 20.0   # Minimum speed the ship can decelerate to
+@export var max_speed: float = 200.0  # Maximum speed the ship can accelerate to
 
 @export_group("Label Offsets")
 @export var label_offset_x_looking_right: float = -110.0  ## X offset when ship faces right
@@ -161,6 +175,10 @@ func _start_random_activity() -> void:
 					_start_activity_stop_and_go()
 				Activity.LIGHT_SPEED_JUMP:
 					_start_activity_light_speed_jump()
+				Activity.ACCELERATE:
+					_start_activity_accelerate()
+				Activity.DECELERATE:
+					_start_activity_decelerate()
 			return
 	
 	# Fallback
@@ -191,6 +209,52 @@ func _start_activity_stop_and_go() -> void:
 	_activity_tween.tween_property(self, "current_speed", original_speed, 1.0).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
 	
 	# Phase 4: Activity complete
+	_activity_tween.tween_callback(_on_activity_complete)
+
+
+func _start_activity_accelerate() -> void:
+	"""Accelerate activity: increase ship speed and maintain it."""
+	activity = Activity.ACCELERATE
+	_activity_done_this_lane = true
+	
+	# Calculate target speed (increase by 30-60% but clamp to max_speed)
+	var speed_increase = current_speed * randf_range(0.3, 0.6)
+	var target_speed = minf(current_speed + speed_increase, max_speed)
+	
+	# Kill any existing tween
+	if _activity_tween and _activity_tween.is_valid():
+		_activity_tween.kill()
+	
+	_activity_tween = create_tween()
+	
+	# Accelerate to target speed (0.8-1.2 seconds)
+	var accel_time = randf_range(0.8, 1.2)
+	_activity_tween.tween_property(self, "current_speed", target_speed, accel_time).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
+	
+	# Activity complete - ship stays at new speed
+	_activity_tween.tween_callback(_on_activity_complete)
+
+
+func _start_activity_decelerate() -> void:
+	"""Decelerate activity: decrease ship speed and maintain it."""
+	activity = Activity.DECELERATE
+	_activity_done_this_lane = true
+	
+	# Calculate target speed (decrease by 20-40% but clamp to min_speed)
+	var speed_decrease = current_speed * randf_range(0.2, 0.4)
+	var target_speed = maxf(current_speed - speed_decrease, min_speed)
+	
+	# Kill any existing tween
+	if _activity_tween and _activity_tween.is_valid():
+		_activity_tween.kill()
+	
+	_activity_tween = create_tween()
+	
+	# Decelerate to target speed (1.0-1.5 seconds, slower than accelerate)
+	var decel_time = randf_range(1.0, 1.5)
+	_activity_tween.tween_property(self, "current_speed", target_speed, decel_time).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	
+	# Activity complete - ship stays at new speed
 	_activity_tween.tween_callback(_on_activity_complete)
 
 

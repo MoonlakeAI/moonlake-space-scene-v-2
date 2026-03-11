@@ -29,7 +29,7 @@ const SHIP_TABLE_UPDATE_INTERVAL: float = 0.5  # Update every 0.5 seconds
 
 # Activity controls
 var _activity_dropdown: OptionButton
-var _selected_activity: int = 1  # 1 = STOP_AND_GO, 2 = LIGHT_SPEED_JUMP
+var _selected_activity: int = 1  # 1 = STOP_AND_GO, 2 = LIGHT_SPEED_JUMP, 3 = ACCELERATE, 4 = DECELERATE
 
 # Generated Ships Panel UI
 var _generated_ships_panel: PanelContainer
@@ -575,6 +575,8 @@ func _create_ship_registry_table() -> void:
 	_activity_dropdown.custom_minimum_size.x = 120
 	_activity_dropdown.add_item("StopAndGo", 1)
 	_activity_dropdown.add_item("LightSpeedJump", 2)
+	_activity_dropdown.add_item("Accelerate", 3)
+	_activity_dropdown.add_item("Decelerate", 4)
 	_activity_dropdown.selected = 0
 	_activity_dropdown.item_selected.connect(_on_activity_selected)
 	activity_row.add_child(_activity_dropdown)
@@ -807,6 +809,12 @@ func _trigger_activity_on_ship(ship: Node) -> void:
 		2:  # LIGHT_SPEED_JUMP
 			if ship.has_method("_start_activity_light_speed_jump"):
 				ship._start_activity_light_speed_jump()
+		3:  # ACCELERATE
+			if ship.has_method("_start_activity_accelerate"):
+				ship._start_activity_accelerate()
+		4:  # DECELERATE
+			if ship.has_method("_start_activity_decelerate"):
+				ship._start_activity_decelerate()
 
 
 # ============ GENERATED SHIPS PANEL ============
