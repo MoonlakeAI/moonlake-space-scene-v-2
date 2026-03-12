@@ -30,7 +30,7 @@ const BOB_SPEED: float = 0.2  ## Cycles per second (slow and dreamy)
 
 # Launch animation parameters
 @export var lift_amount: float = 25.0  ## Pixels to lift before accelerating
-@export var lift_duration: float = 0.6  ## Duration of lift phase (hold at top)
+@export var lift_duration: float = 2  ## Duration of lift phase (hold at top)
 @export var launch_duration: float = 1.0  ## Duration of acceleration phase
 @export var launch_exit_offset: float = 300.0  ## How far off-screen to exit
 
