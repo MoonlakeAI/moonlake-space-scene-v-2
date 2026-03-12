@@ -8,12 +8,12 @@ uniform vec4 grid_color : source_color = vec4(0.2, 0.8, 1.0, 0.3);
 uniform float chunk_scale : hint_range(1.0, 1000.0) = 550.0;
 uniform float chunk_threshold : hint_range(0.0, 1.0) = 0;
 uniform float chunk_speed : hint_range(0.1, 2.0) = 0.4;
-uniform float scanline_density : hint_range(20.0, 150.0) = 60.0;
-uniform float scanline_opacity : hint_range(0.0, 0.5) = 0.15;
+uniform float scanline_density : hint_range(20.0, 150.0) = 20.0;
+uniform float scanline_opacity : hint_range(0.0, 0.5) = 0.20;
 uniform float grid_density : hint_range(10.0, 100.0) = 200.0;
 uniform float grid_thickness : hint_range(0.01, 0.1) = 0.2;
 uniform float edge_glow : hint_range(0.0, 3.0) = 1.5;
-uniform float alpha_base : hint_range(0.3, 1.0) = 1.0;
+uniform float alpha_base : hint_range(0.3, 1.0) = 0.8;
 
 // Noise functions for chunk effect
 float hash(vec2 p) {
