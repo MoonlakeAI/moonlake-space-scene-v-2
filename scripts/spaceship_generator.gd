@@ -10,7 +10,7 @@ signal ship_selected(index: int)
 var _generated_ships: Array[Dictionary] = []
 
 const SAVE_DIR := "user://generated_spaceships/"
-const SYSTEM_PROMPT := "facing towards right, maintain the aspect ratio of the reference images"
+const SYSTEM_PROMPT := "facing towards right, maintain the aspect ratio of the reference images,"
 const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel"
 
 const REFERENCE_IMAGES := [

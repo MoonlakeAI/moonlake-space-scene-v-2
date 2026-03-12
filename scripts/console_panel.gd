@@ -67,6 +67,30 @@ func _style_popup_menu() -> void:
 	popup.add_theme_color_override("font_color", Color(0.5, 0.75, 0.8, 1))
 	popup.add_theme_color_override("font_hover_color", Color(0.7, 0.95, 1, 1))
 	popup.add_theme_color_override("font_separator_color", Color(0.3, 0.5, 0.55, 0.7))
+	
+	# Connect to reposition popup to open upward
+	if not popup.about_to_popup.is_connected(_on_popup_about_to_show):
+		popup.about_to_popup.connect(_on_popup_about_to_show)
+
+
+func _on_popup_about_to_show() -> void:
+	var popup := role_input.get_popup()
+	if not popup:
+		return
+	
+	# Wait for popup to calculate its size
+	await get_tree().process_frame
+	
+	# Get the button's global position and size
+	var button_rect := role_input.get_global_rect()
+	var popup_size := popup.size
+	
+	# Position popup above the button, aligned to left edge
+	var new_pos := Vector2(
+		button_rect.position.x,
+		button_rect.position.y - popup_size.y
+	)
+	popup.position = new_pos
 
 
 func _find_preview_spaceship() -> void:

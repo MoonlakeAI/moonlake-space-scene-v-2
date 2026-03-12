@@ -61,8 +61,8 @@ alignment = 1
 
 [node name="RoleEmblem" type="TextureRect" parent="LabelContainer/HBoxContainer" unique_id=465078294]
 material = SubResource("ShaderMaterial_holo")
-layout_mode = 2
 custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 3
 stretch_mode = 5
@@ -70,7 +70,6 @@ stretch_mode = 5
 [node name="NameLabel" type="Label" parent="LabelContainer/HBoxContainer" unique_id=1429957993]
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 2
-size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
 theme_override_fonts/font = SubResource("FontVariation_spaced")
 theme_override_font_sizes/font_size = 22
