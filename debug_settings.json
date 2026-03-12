@@ -23,6 +23,7 @@
 		"show_lane_background": false
 	},
 	"spaceship": {
+		"afterburner_trail_offset_x": 20.0,
 		"despawn_offset": 850.0,
 		"spawn_offset": 100.0
 	}

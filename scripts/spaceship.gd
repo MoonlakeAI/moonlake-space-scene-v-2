@@ -7,16 +7,10 @@ extends Node2D
 signal journey_completed(ship: Spaceship)  # Emitted when ship exits screen
 
 # Activity types
-enum Activity { NONE, STOP_AND_GO, LIGHT_SPEED_JUMP, ACCELERATE, DECELERATE }
+enum Activity { NONE, LIGHT_SPEED_JUMP, ACCELERATE, DECELERATE }
 
 # Activity map - defines available activities and their weights
 const ACTIVITY_MAP: Dictionary = {
-	Activity.STOP_AND_GO: {
-		"name": "StopAndGo",
-		"weight": 1.0,           # Relative chance of being selected
-		"min_progress": 0.2,     # Don't trigger before 20% of journey
-		"max_progress": 0.8,     # Don't trigger after 80% of journey
-	},
 	Activity.LIGHT_SPEED_JUMP: {
 		"name": "LightSpeedJump",
 		"weight": 1.0,           # Equal chance with StopAndGo
@@ -38,7 +32,9 @@ const ACTIVITY_MAP: Dictionary = {
 }
 
 # Chance that an activity will occur during a lane (0.0 - 1.0)
-const ACTIVITY_CHANCE: float = 0.4
+# Base chance for lane 1, increases for lanes 2 and 3
+const ACTIVITY_CHANCE_BASE: float = 0.2   # Lane 1 (closest): 20%
+const ACTIVITY_CHANCE_PER_LANE: float = 0.2  # +20% per lane (Lane 2: 40%, Lane 3: 60%)
 
 @export var ship_name: String = "Unknown"
 @export var role: String = "Freighter"
@@ -52,6 +48,20 @@ const ACTIVITY_CHANCE: float = 0.4
 @export_group("Label Offsets")
 @export var label_offset_x_looking_right: float = -110.0  ## X offset when ship faces right
 @export var label_offset_x_looking_left: float = 110.0   ## X offset when ship faces left
+
+# Role-to-theme color mapping (RGBA)
+# Bots always use white, player ships use role-based colors
+const ROLE_THEME_COLORS: Dictionary = {
+	"Bot": Color(1.0, 1.0, 1.0, 1.0),           # White for bots
+	"Design": Color(0.95, 0.3, 0.5, 1.0),       # Pink/Magenta
+	"Engineering": Color(0.2, 0.8, 1.0, 1.0),   # Cyan
+	"Creative": Color(1.0, 0.6, 0.1, 1.0),      # Orange
+	"Production": Color(0.4, 1.0, 0.4, 1.0),    # Green
+}
+const DEFAULT_THEME_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)  # White fallback
+
+# Theme color for this ship (set based on role)
+var theme_color: Color = DEFAULT_THEME_COLOR
 
 # Non-linear movement parameters
 var drift_amplitude: float = 0.0    # Vertical sine wave drift in pixels
@@ -88,9 +98,13 @@ var _next_check_index: int = 0              # Which checkpoint to check next
 var _lightspeed_shader: ShaderMaterial = null
 var _original_material: Material = null
 var _lightspeed_trail: ColorRect = null
+var _afterburner_trail: ColorRect = null
+var _afterburner_pulse_time: float = 0.0
+var _afterburner_trail_offset_x: float = 0.0  # X offset for afterburner trail position
 var _original_sprite_scale: Vector2 = Vector2.ONE
 const LIGHTSPEED_SHADER_PATH = "res://shaders/lightspeed_jump.gdshader"
 const TRAIL_GRADIENT_SHADER = preload("res://shaders/lightspeed_trail.gdshader")
+const AFTERBURNER_TRAIL_SHADER = preload("res://shaders/afterburner_trail.gdshader")
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var name_label: Label = $LabelContainer/VBoxContainer/NameLabel
@@ -202,8 +216,12 @@ func _check_activity_trigger() -> void:
 	if progress >= next_checkpoint:
 		_next_check_index += 1
 		
+		# Calculate activity chance based on lane (farther lanes = higher chance)
+		# lane_index: 0=closest, 1=mid, 2=farthest
+		var activity_chance = ACTIVITY_CHANCE_BASE + (lane_index * ACTIVITY_CHANCE_PER_LANE)
+		
 		# Roll for activity
-		if randf() < ACTIVITY_CHANCE:
+		if randf() < activity_chance:
 			_start_random_activity()
 
 
@@ -232,8 +250,6 @@ func _start_random_activity() -> void:
 		cumulative += ACTIVITY_MAP[activity_type]["weight"]
 		if roll <= cumulative:
 			match activity_type:
-				Activity.STOP_AND_GO:
-					_start_activity_stop_and_go()
 				Activity.LIGHT_SPEED_JUMP:
 					_start_activity_light_speed_jump()
 				Activity.ACCELERATE:
@@ -243,40 +259,14 @@ func _start_random_activity() -> void:
 			return
 	
 	# Fallback
-	_start_activity_stop_and_go()
+	_start_activity_accelerate()
 
-
-func _start_activity_stop_and_go() -> void:
-	"""StopAndGo activity: bring ship to halt, pause, then resume speed."""
-	activity = Activity.STOP_AND_GO
-
-	
-	var original_speed = current_speed
-	
-	# Kill any existing tween
-	if _activity_tween and _activity_tween.is_valid():
-		_activity_tween.kill()
-	
-	_activity_tween = create_tween()
-	
-	# Phase 1: Decelerate to stop (0.8 seconds)
-	_activity_tween.tween_property(self, "current_speed", 0.0, 0.8).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-	
-	# Phase 2: Hold at stop (1.0-2.0 seconds random)
-	var hold_time = randf_range(1.0, 2.0)
-	_activity_tween.tween_interval(hold_time)
-	
-	# Phase 3: Accelerate back to original speed (1.0 seconds)
-	_activity_tween.tween_property(self, "current_speed", original_speed, 1.0).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
-	
-	# Phase 4: Activity complete
-	_activity_tween.tween_callback(_on_activity_complete)
 
 
 func _start_activity_accelerate() -> void:
-	"""Accelerate activity: increase ship speed and maintain it."""
+	"""Accelerate activity: increase ship speed and maintain it with neon afterburner trail."""
 	activity = Activity.ACCELERATE
-
+	print("[Spaceship] Starting ACCELERATE activity for ", ship_name)
 	
 	# Calculate target speed (increase by 30-60% but clamp to max_speed)
 	var speed_increase = current_speed * randf_range(0.3, 0.6)
@@ -286,11 +276,20 @@ func _start_activity_accelerate() -> void:
 	if _activity_tween and _activity_tween.is_valid():
 		_activity_tween.kill()
 	
+	# Create afterburner trail at current position
+	_create_afterburner_trail()
+	
 	_activity_tween = create_tween()
 	
 	# Accelerate to target speed (0.8-1.2 seconds)
-	var accel_time = randf_range(0.8, 1.2)
-	_activity_tween.tween_property(self, "current_speed", target_speed, accel_time).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
+	var accel_time = 6.0  # Fixed 6 second acceleration duration
+	
+	# Animate speed and trail simultaneously
+	_activity_tween.tween_method(_animate_accelerate_with_trail.bind(current_speed, target_speed), 0.0, 1.0, accel_time).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_QUAD)
+	
+	# Fade out the trail after acceleration completes
+	_activity_tween.tween_callback(_fade_out_afterburner_trail)
+	_activity_tween.tween_interval(0.4)  # Wait for trail fade
 	
 	# Activity complete - ship stays at new speed
 	_activity_tween.tween_callback(_on_activity_complete)
@@ -504,6 +503,131 @@ func _remove_gradient_trail() -> void:
 		_lightspeed_trail = null
 
 
+# ============================================================================
+# AFTERBURNER TRAIL FUNCTIONS (for Accelerate activity)
+# ============================================================================
+
+func _create_afterburner_trail() -> void:
+	"""Create a neon afterburner trail anchored at the ship's current position.
+	Trail grows in world space as ship accelerates away from the start point."""
+	# Remove any existing trail
+	_remove_afterburner_trail()
+	
+	# Create ColorRect for trail
+	_afterburner_trail = ColorRect.new()
+	_afterburner_pulse_time = 0.0
+	
+	# Calculate trail height based on ship depth
+	var trail_height = 30.0 * layer_depth
+	
+	# Store the starting position (where acceleration began)
+	var start_x = position.x
+	
+	# Position trail at ship's current Y, starting with zero width
+	_afterburner_trail.position = Vector2(start_x, position.y - trail_height / 2.0)
+	_afterburner_trail.size = Vector2(0.0, trail_height)  # Start at zero width
+	
+	# Store metadata for trail updates
+	_afterburner_trail.set_meta("start_x", start_x)
+	_afterburner_trail.set_meta("start_y", position.y)
+	_afterburner_trail.set_meta("trail_height", trail_height)
+	_afterburner_trail.set_meta("direction", direction)
+	_afterburner_trail.set_meta("start_time", Time.get_ticks_msec())
+	
+	# Apply neon afterburner shader with theme color
+	var trail_material = ShaderMaterial.new()
+	trail_material.shader = AFTERBURNER_TRAIL_SHADER
+	trail_material.set_shader_parameter("core_color", Color(1.0, 0.95, 0.9, 1.0))  # Bright white-ish core
+	trail_material.set_shader_parameter("glow_color", theme_color)  # Use ship's theme color for glow
+	trail_material.set_shader_parameter("opacity", 1.0)
+	trail_material.set_shader_parameter("direction", direction)
+	trail_material.set_shader_parameter("glow_intensity", 2.5)
+	trail_material.set_shader_parameter("fade_progress", 0.0)
+	trail_material.set_shader_parameter("pulse_time", 0.0)
+	_afterburner_trail.material = trail_material
+	
+	# Add to parent (world space) so trail stays anchored while ship moves
+	var parent = get_parent()
+	if parent:
+		parent.add_child(_afterburner_trail)
+		# Move trail behind the ship in render order
+		parent.move_child(_afterburner_trail, get_index())
+	
+	print("[Spaceship] Afterburner trail created for ", ship_name, " at start_x=", start_x)
+
+
+func _animate_accelerate_with_trail(progress: float, start_speed: float, target_speed: float) -> void:
+	"""Animate ship speed and update afterburner trail during acceleration."""
+	# Update ship speed
+	current_speed = lerpf(start_speed, target_speed, progress)
+	
+	# Update afterburner trail position and pulse
+	_update_afterburner_trail()
+
+
+func _update_afterburner_trail() -> void:
+	"""Update afterburner trail to grow from start position to current ship position."""
+	if not _afterburner_trail or not is_instance_valid(_afterburner_trail):
+		return
+	
+	var start_x: float = _afterburner_trail.get_meta("start_x", position.x)
+	var start_y: float = _afterburner_trail.get_meta("start_y", position.y)
+	var trail_height: float = _afterburner_trail.get_meta("trail_height", 30.0)
+	var trail_direction: int = _afterburner_trail.get_meta("direction", 1)
+	var start_time: int = _afterburner_trail.get_meta("start_time", Time.get_ticks_msec())
+	
+	# Calculate trail width based on distance traveled from start
+	var trail_width = absf(position.x - start_x)
+	
+	# Update trail size
+	_afterburner_trail.size.x = trail_width
+	_afterburner_trail.size.y = trail_height
+	
+	# Update trail position based on direction
+	if trail_direction > 0:
+		# Moving right: trail starts at start_x and extends right toward ship
+		_afterburner_trail.position.x = start_x
+	else:
+		# Moving left: trail starts at current position and extends right toward start_x
+		_afterburner_trail.position.x = position.x
+	
+	# Keep Y centered on the path
+	_afterburner_trail.position.y = start_y - trail_height / 2.0
+	
+	# Update pulse animation
+	var elapsed = (Time.get_ticks_msec() - start_time) / 1000.0
+	if _afterburner_trail.material:
+		_afterburner_trail.material.set_shader_parameter("pulse_time", elapsed)
+
+
+func _fade_out_afterburner_trail() -> void:
+	"""Fade out the afterburner trail by reducing opacity to 0."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail):
+		var trail_tween = create_tween()
+		# Fade opacity from 1.0 to 0.0 over 0.5 seconds
+		trail_tween.tween_method(_set_afterburner_opacity, 1.0, 0.0, 0.5).set_ease(Tween.EASE_OUT)
+		trail_tween.tween_callback(_remove_afterburner_trail)
+
+
+func _set_afterburner_opacity(value: float) -> void:
+	"""Helper to set afterburner trail opacity via tween."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail) and _afterburner_trail.material:
+		_afterburner_trail.material.set_shader_parameter("opacity", value)
+
+
+func _set_afterburner_fade_progress(value: float) -> void:
+	"""Helper to set afterburner trail fade progress via tween."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail) and _afterburner_trail.material:
+		_afterburner_trail.material.set_shader_parameter("fade_progress", value)
+
+
+func _remove_afterburner_trail() -> void:
+	"""Remove the afterburner trail from the scene."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail):
+		_afterburner_trail.queue_free()
+		_afterburner_trail = null
+
+
 func _on_lightspeed_complete() -> void:
 	"""Called when lightspeed jump completes."""
 	# Restore original material
@@ -594,14 +718,18 @@ func _reset_activity_state() -> void:
 	if sprite and _original_sprite_scale != Vector2.ONE:
 		sprite.scale = _original_sprite_scale
 	
-	# Clean up any leftover trail
+	# Clean up any leftover trails
 	_remove_gradient_trail()
+	_remove_afterburner_trail()
 
 func setup(p_name: String, p_role: String, p_direction: int, p_depth: float, p_speed: float) -> void:
 	ship_name = p_name
 	role = p_role
 	direction = p_direction
 	layer_depth = p_depth
+	
+	# Set theme color based on role
+	theme_color = ROLE_THEME_COLORS.get(p_role, DEFAULT_THEME_COLOR)
 	
 	# Closer ships (higher depth) are bigger and move faster
 	speed = p_speed
@@ -692,3 +820,11 @@ func _refresh_label_position() -> void:
 		label_container.scale.x = 1
 		label_container.offset_left = label_offset_x_looking_right
 		label_container.offset_right = label_offset_x_looking_right + _label_width
+
+
+## Set afterburner trail X offset (positive = toward ship nose, negative = away from ship)
+func set_afterburner_trail_offset_x(offset: float) -> void:
+	_afterburner_trail_offset_x = offset
+	# Update trail position if it exists
+	if _afterburner_trail and is_instance_valid(_afterburner_trail):
+		_update_afterburner_trail()

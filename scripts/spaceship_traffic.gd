@@ -807,3 +807,12 @@ func set_all_ships_label_offset_right(new_offset: float) -> void:
 		if ship and is_instance_valid(ship) and ship.has_method("set_label_offset_x_looking_right"):
 			ship.set_label_offset_x_looking_right(new_offset)
 	print("[SpaceshipTraffic] Updated label_offset_x_looking_right to %s on %d ships" % [new_offset, ship_registry.size()])
+
+
+## Update afterburner trail X offset on all active ships
+func set_all_ships_afterburner_trail_offset_x(new_offset: float) -> void:
+	for entry in ship_registry:
+		var ship = entry.get("ship_ref")
+		if ship and is_instance_valid(ship) and ship.has_method("set_afterburner_trail_offset_x"):
+			ship.set_afterburner_trail_offset_x(new_offset)
+	print("[SpaceshipTraffic] Updated afterburner_trail_offset_x to %s on %d ships" % [new_offset, ship_registry.size()])

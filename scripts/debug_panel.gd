@@ -29,7 +29,7 @@ const SHIP_TABLE_UPDATE_INTERVAL: float = 0.5  # Update every 0.5 seconds
 
 # Activity controls
 var _activity_dropdown: OptionButton
-var _selected_activity: int = 1  # 1 = STOP_AND_GO, 2 = LIGHT_SPEED_JUMP, 3 = ACCELERATE, 4 = DECELERATE
+var _selected_activity: int = 2  # 2 = LIGHT_SPEED_JUMP, 3 = ACCELERATE, 4 = DECELERATE
 
 # Generated Ships Panel UI
 var _generated_ships_panel: PanelContainer
@@ -359,6 +359,9 @@ func _apply_setting(control_key: String) -> void:
 		"spaceship.despawn_offset":
 			if _spaceship_traffic:
 				_spaceship_traffic.set_despawn_offset(value)
+		"spaceship.afterburner_trail_offset_x":
+			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_afterburner_trail_offset_x"):
+				_spaceship_traffic.set_all_ships_afterburner_trail_offset_x(value)
 		"preview.position_y":
 			if _preview_spaceship and _preview_spaceship.has_method("set_position_y_ratio"):
 				_preview_spaceship.set_position_y_ratio(value)
@@ -413,6 +416,9 @@ func _apply_setting_value(control_key: String, value: Variant) -> void:
 		"spaceship.despawn_offset":
 			if _spaceship_traffic:
 				_spaceship_traffic.set_despawn_offset(value)
+		"spaceship.afterburner_trail_offset_x":
+			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_afterburner_trail_offset_x"):
+				_spaceship_traffic.set_all_ships_afterburner_trail_offset_x(value)
 		"preview.position_y":
 			if _preview_spaceship and _preview_spaceship.has_method("set_position_y_ratio"):
 				_preview_spaceship.set_position_y_ratio(value)
@@ -573,7 +579,6 @@ func _create_ship_registry_table() -> void:
 	_activity_dropdown = OptionButton.new()
 	_activity_dropdown.add_theme_font_size_override("font_size", 10)
 	_activity_dropdown.custom_minimum_size.x = 120
-	_activity_dropdown.add_item("StopAndGo", 1)
 	_activity_dropdown.add_item("LightSpeedJump", 2)
 	_activity_dropdown.add_item("Accelerate", 3)
 	_activity_dropdown.add_item("Decelerate", 4)
@@ -803,9 +808,6 @@ func _trigger_activity_on_ship(ship: Node) -> void:
 		return
 	
 	match _selected_activity:
-		1:  # STOP_AND_GO
-			if ship.has_method("_start_activity_stop_and_go"):
-				ship._start_activity_stop_and_go()
 		2:  # LIGHT_SPEED_JUMP
 			if ship.has_method("_start_activity_light_speed_jump"):
 				ship._start_activity_light_speed_jump()
