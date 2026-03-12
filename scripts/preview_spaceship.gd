@@ -60,6 +60,8 @@ var _name_input: LineEdit
 var _role_input: OptionButton
 var _loaded_textures: Array[Texture2D] = []
 var _hangar_frame_material: ShaderMaterial  ## Reference to hangar frame shader material
+var _blueprint_material: ShaderMaterial  ## Blueprint hologram shader for docked ship
+var _original_material: Material  ## Store original material to restore on launch
 var _current_index: int = 0
 var _position_y_ratio: float = 0.9  ## Y position as ratio of screen height (0.9 = 90% from top)
 var _bob_time: float = 0.0
@@ -77,6 +79,9 @@ var _pending_texture: Texture2D = null
 func _ready() -> void:
 	# Load ship textures
 	_load_ship_textures()
+	
+	# Setup blueprint hologram shader
+	_setup_blueprint_shader()
 	
 	# Position at center horizontally, Y from settings
 	_update_position()
@@ -128,6 +133,64 @@ func _load_ship_textures() -> void:
 		var texture = load(path) as Texture2D
 		if texture:
 			_loaded_textures.append(texture)
+
+
+func _setup_blueprint_shader() -> void:
+	var shader := load("res://shaders/blueprint_hologram.gdshader") as Shader
+	if shader and sprite:
+		_original_material = sprite.material
+		_blueprint_material = ShaderMaterial.new()
+		_blueprint_material.shader = shader
+		# Apply blueprint shader by default (ship starts docked)
+		sprite.material = _blueprint_material
+
+
+## Blueprint shader parameter setters (called by DebugPanel)
+func set_blueprint_holo_color(r: float, g: float, b: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("holo_color", Color(r, g, b, 1.0))
+
+func set_blueprint_chunk_scale(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("chunk_scale", value)
+
+func set_blueprint_chunk_speed(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("chunk_speed", value)
+
+func set_blueprint_scanline_density(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("scanline_density", value)
+
+func set_blueprint_scanline_opacity(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("scanline_opacity", value)
+
+func set_blueprint_grid_density(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("grid_density", value)
+
+func set_blueprint_grid_thickness(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("grid_thickness", value)
+
+func set_blueprint_edge_glow(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("edge_glow", value)
+
+func set_blueprint_alpha_base(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("alpha_base", value)
+
+
+func _apply_blueprint_shader() -> void:
+	if sprite and _blueprint_material:
+		sprite.material = _blueprint_material
+
+
+func _remove_blueprint_shader() -> void:
+	if sprite:
+		sprite.material = _original_material
 
 
 func _update_position() -> void:
@@ -230,11 +293,19 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	
 	# Create launch animation sequence
 	_launch_tween = create_tween()
-	_launch_tween.set_ease(Tween.EASE_OUT)
-	_launch_tween.set_trans(Tween.TRANS_QUAD)
+	
+	# Phase 0: Dematerialize (chunk_threshold 0 -> 1) before undocking
+	_launch_tween.set_ease(Tween.EASE_IN)
+	_launch_tween.set_trans(Tween.TRANS_CUBIC)
+	_launch_tween.tween_method(_set_chunk_threshold, 0.0, 1.0, 1.5)
+	
+	# Remove blueprint shader after dematerialization completes
+	_launch_tween.tween_callback(_remove_blueprint_shader)
 	
 	# Phase 1: Lift up (sprite moves up relative to base)
 	# Also transition hangar frame from cyan to yellow
+	_launch_tween.set_ease(Tween.EASE_OUT)
+	_launch_tween.set_trans(Tween.TRANS_QUAD)
 	var lift_target_y := -lift_amount + current_bob
 	_launch_tween.tween_property(sprite, "position:y", lift_target_y, lift_duration)
 	if label_container:
@@ -333,7 +404,28 @@ func _dock_next_ship() -> void:
 func _on_dock_animation_finished() -> void:
 	_state = State.IDLE
 	_bob_time = 0.0  # Reset bob phase for smooth start
+	# Apply blueprint shader - new ship is under construction
+	_apply_blueprint_shader()
+	# Start materializing animation (chunk_threshold 1 -> 0)
+	_start_materialize_animation()
 	dock_completed.emit()
+
+
+func _start_materialize_animation() -> void:
+	if not _blueprint_material:
+		return
+	# Start fully holographic (threshold = 1)
+	_blueprint_material.set_shader_parameter("chunk_threshold", 1.0)
+	# Animate to fully solid (threshold = 0) over time
+	var materialize_tween := create_tween()
+	materialize_tween.set_ease(Tween.EASE_OUT)
+	materialize_tween.set_trans(Tween.TRANS_CUBIC)
+	materialize_tween.tween_method(_set_chunk_threshold, 1.0, 0.0, 3.0)
+
+
+func _set_chunk_threshold(value: float) -> void:
+	if _blueprint_material:
+		_blueprint_material.set_shader_parameter("chunk_threshold", value)
 
 
 ## Check if the ship is ready to launch (in IDLE state)

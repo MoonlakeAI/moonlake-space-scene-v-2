@@ -378,8 +378,11 @@ func _apply_setting(control_key: String) -> void:
 			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_right"):
 				_spaceship_traffic.set_all_ships_label_offset_right(value)
 		_:
+			# Handle blueprint shader settings
+			if control_key.begins_with("blueprint_shader."):
+				_apply_blueprint_shader_setting(control_key, value)
 			# Handle lane row settings dynamically
-			if _spaceship_traffic and control_key.begins_with("lane_"):
+			elif _spaceship_traffic and control_key.begins_with("lane_"):
 				_apply_lane_row_setting(control_key, value)
 	
 	print("[DebugPanel] Applied: %s = %s" % [control_key, str(value)])
@@ -474,6 +477,30 @@ func _apply_lane_row_setting(control_key: String, value: float) -> void:
 		return
 	
 	_spaceship_traffic.set_lane_row_position(lane_index, row_index, value)
+
+
+func _apply_blueprint_shader_setting(control_key: String, value: float) -> void:
+	"""Apply blueprint shader settings to preview spaceship."""
+	if not _preview_spaceship:
+		return
+	
+	# Handle color components specially - collect all three and apply together
+	if control_key.ends_with("_r") or control_key.ends_with("_g") or control_key.ends_with("_b"):
+		# Get all color components from settings
+		var shader_settings = _settings.get("blueprint_shader", {})
+		var r = shader_settings.get("holo_color_r", 0.1)
+		var g = shader_settings.get("holo_color_g", 0.6)
+		var b = shader_settings.get("holo_color_b", 0.9)
+		if _preview_spaceship.has_method("set_blueprint_holo_color"):
+			_preview_spaceship.set_blueprint_holo_color(r, g, b)
+		return
+	
+	# Map control_key to method name
+	var setting_name = control_key.replace("blueprint_shader.", "")
+	var method_name = "set_blueprint_" + setting_name
+	
+	if _preview_spaceship.has_method(method_name):
+		_preview_spaceship.call(method_name, value)
 
 
 func _flash_save_button() -> void:

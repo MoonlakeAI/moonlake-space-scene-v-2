@@ -1,4 +1,17 @@
 {
+	"blueprint_shader": {
+		"alpha_base": 1.0,
+		"chunk_scale": 500.0,
+		"chunk_speed": 0.399999999999636,
+		"edge_glow": 1.5,
+		"grid_density": 40.0,
+		"grid_thickness": 0.0300000000006548,
+		"holo_color_b": 0.55,
+		"holo_color_g": 0.35,
+		"holo_color_r": 0.05,
+		"scanline_density": 40.0,
+		"scanline_opacity": 0.149999999999636
+	},
 	"lane_1_blue": {
 		"row_1": 0.709999999999127
 	},
