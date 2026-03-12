@@ -371,6 +371,12 @@ func _apply_setting(control_key: String) -> void:
 		"preview.label_offset_y":
 			if _preview_spaceship and _preview_spaceship.has_method("set_label_offset_y"):
 				_preview_spaceship.set_label_offset_y(value)
+		"preview.trail_offset_x":
+			if _preview_spaceship and _preview_spaceship.has_method("set_trail_offset_x"):
+				_preview_spaceship.set_trail_offset_x(value)
+		"preview.perpetual_launch":
+			if _preview_spaceship and _preview_spaceship.has_method("set_perpetual_launch"):
+				_preview_spaceship.set_perpetual_launch(value)
 		"space_traffic.label_offset_x_looking_left":
 			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_left"):
 				_spaceship_traffic.set_all_ships_label_offset_left(value)
@@ -431,6 +437,12 @@ func _apply_setting_value(control_key: String, value: Variant) -> void:
 		"preview.label_offset_y":
 			if _preview_spaceship and _preview_spaceship.has_method("set_label_offset_y"):
 				_preview_spaceship.set_label_offset_y(value)
+		"preview.trail_offset_x":
+			if _preview_spaceship and _preview_spaceship.has_method("set_trail_offset_x"):
+				_preview_spaceship.set_trail_offset_x(value)
+		"preview.perpetual_launch":
+			if _preview_spaceship and _preview_spaceship.has_method("set_perpetual_launch"):
+				_preview_spaceship.set_perpetual_launch(value)
 		"space_traffic.label_offset_x_looking_left":
 			if _spaceship_traffic and _spaceship_traffic.has_method("set_all_ships_label_offset_left"):
 				_spaceship_traffic.set_all_ships_label_offset_left(value)

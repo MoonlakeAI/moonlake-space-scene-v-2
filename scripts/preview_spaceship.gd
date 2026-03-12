@@ -75,6 +75,16 @@ var _pending_ship_name: String = ""
 var _pending_ship_role: String = ""
 var _pending_texture: Texture2D = null
 
+# Afterburner trail (fires during launch)
+const AFTERBURNER_TRAIL_SHADER = preload("res://shaders/afterburner_trail.gdshader")
+var _trail_offset_x: float = 330.0  # Offset to position trail behind ship center (at engines)
+var _afterburner_trail: ColorRect = null
+var _trail_start_x: float = 0.0
+var _trail_start_y: float = 0.0
+
+# Debug: perpetual launch mode
+var _perpetual_launch: bool = false
+
 
 func _ready() -> void:
 	# Load ship textures
@@ -191,6 +201,100 @@ func _apply_blueprint_shader() -> void:
 func _remove_blueprint_shader() -> void:
 	if sprite:
 		sprite.material = _original_material
+
+
+# ============================================================================
+# AFTERBURNER TRAIL (Fires during launch acceleration)
+# ============================================================================
+
+func _create_afterburner_trail() -> void:
+	"""Create a neon afterburner trail for launch sequence.
+	Trail grows as ship accelerates away from the lift position."""
+	_remove_afterburner_trail()
+	
+	# Create ColorRect for trail
+	_afterburner_trail = ColorRect.new()
+	
+	# Trail height - make it wide and diffuse so exact position is hard to pinpoint
+	var trail_height := 120.0 * preview_scale
+	
+	# Store starting position with offset to place trail behind ship (at engines)
+	# Ship faces LEFT, so engines are to the RIGHT (positive X offset)
+	_trail_start_x = position.x + _trail_offset_x
+	_trail_start_y = position.y
+	
+	# Position trail centered vertically on ship
+	_afterburner_trail.position = Vector2(_trail_start_x, _trail_start_y - trail_height / 2.0)
+	_afterburner_trail.size = Vector2(50.0, trail_height)  # Start with wide base
+	
+	# Apply neon afterburner shader - use white core with cyan glow
+	var trail_material := ShaderMaterial.new()
+	trail_material.shader = AFTERBURNER_TRAIL_SHADER
+	trail_material.set_shader_parameter("core_color", Color(1.0, 0.98, 0.95, 1.0))  # Warm white core
+	trail_material.set_shader_parameter("glow_color", Color(0.0, 0.8, 1.0, 1.0))    # Bright cyan glow
+	trail_material.set_shader_parameter("opacity", 1.0)
+	trail_material.set_shader_parameter("direction", -1)  # Moving left
+	trail_material.set_shader_parameter("glow_intensity", 3.5)  # High glow for diffuse look
+	trail_material.set_shader_parameter("fade_progress", 0.0)
+	trail_material.set_shader_parameter("pulse_time", 0.0)
+	_afterburner_trail.material = trail_material
+	
+	# Render behind ship
+	_afterburner_trail.z_index = -1
+	
+	# Add to parent (CanvasLayer) so trail stays in world space while ship moves
+	var parent := get_parent()
+	if parent:
+		parent.add_child(_afterburner_trail)
+		# Move trail behind ship in render order
+		parent.move_child(_afterburner_trail, get_index())
+
+
+func _update_afterburner_trail() -> void:
+	"""Update afterburner trail width based on distance traveled."""
+	if not _afterburner_trail or not is_instance_valid(_afterburner_trail):
+		return
+	
+	var trail_height := _afterburner_trail.size.y * 1.4
+	
+	# Current trail anchor point (behind ship at engines)
+	var current_trail_x := position.x + _trail_offset_x
+	
+	# Calculate trail width from distance traveled (ship moving left)
+	var trail_width := maxf(50.0, absf(_trail_start_x - current_trail_x))  # Wide minimum base
+	
+	# Update trail size
+	_afterburner_trail.size.x = trail_width
+	
+	# Moving left: trail extends from current position (left edge) to start position (right edge)
+	_afterburner_trail.position.x = current_trail_x
+	_afterburner_trail.position.y = _trail_start_y - trail_height / 2.0
+	
+	# Update pulse animation
+	if _afterburner_trail.material:
+		var elapsed := Time.get_ticks_msec() / 1000.0
+		_afterburner_trail.material.set_shader_parameter("pulse_time", elapsed)
+
+
+func _fade_out_afterburner_trail() -> void:
+	"""Fade out and remove the afterburner trail."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail):
+		var trail_tween := create_tween()
+		trail_tween.tween_method(_set_afterburner_opacity, 1.0, 0.0, 0.5).set_ease(Tween.EASE_OUT)
+		trail_tween.tween_callback(_remove_afterburner_trail)
+
+
+func _set_afterburner_opacity(value: float) -> void:
+	"""Helper to set afterburner trail opacity via tween."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail) and _afterburner_trail.material:
+		_afterburner_trail.material.set_shader_parameter("opacity", value)
+
+
+func _remove_afterburner_trail() -> void:
+	"""Remove the afterburner trail from the scene."""
+	if _afterburner_trail and is_instance_valid(_afterburner_trail):
+		_afterburner_trail.queue_free()
+		_afterburner_trail = null
 
 
 func _update_position() -> void:
@@ -313,12 +417,27 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	# Transition hangar frame to launch mode (cyan -> yellow)
 	_launch_tween.parallel().tween_method(_set_hangar_launch_progress, 0.0, 1.0, lift_duration)
 	
-	# Phase 2: Accelerate to the left (exponential feel)
+	# Phase 2: Accelerate to the left (exponential feel) with afterburner trail
 	var exit_x := -launch_exit_offset
+	var start_x := position.x  # Capture start position for trail
+	
+	# Create afterburner trail at the start of acceleration
+	_launch_tween.tween_callback(_create_afterburner_trail)
 	
 	_launch_tween.set_ease(Tween.EASE_IN)
 	_launch_tween.set_trans(Tween.TRANS_EXPO)
-	_launch_tween.tween_property(self, "position:x", exit_x, launch_duration)
+	# Use tween_method to animate position AND update trail simultaneously
+	_launch_tween.tween_method(
+		func(progress: float) -> void:
+			# Move ship using expo-in curve (already handled by tween easing)
+			position.x = lerpf(start_x, exit_x, progress)
+			# Update afterburner trail
+			_update_afterburner_trail(),
+		0.0, 1.0, launch_duration
+	)
+	
+	# Fade out afterburner trail after launch completes
+	_launch_tween.tween_callback(_fade_out_afterburner_trail)
 	
 	# On completion, emit signal and start docking next ship
 	_launch_tween.tween_callback(_on_launch_animation_finished)
@@ -409,6 +528,12 @@ func _on_dock_animation_finished() -> void:
 	# Start materializing animation (chunk_threshold 1 -> 0)
 	_start_materialize_animation()
 	dock_completed.emit()
+	
+	# Perpetual launch mode: restart launch after a short delay
+	if _perpetual_launch:
+		var restart_tween := create_tween()
+		restart_tween.tween_interval(0.5)  # Brief pause before next launch
+		restart_tween.tween_callback(func(): launch("DEBUG", "Test", null))
 
 
 func _start_materialize_animation() -> void:
@@ -508,3 +633,18 @@ func set_label_offset_y(offset: float) -> void:
 	label_offset_y = offset
 	if label_container:
 		label_container.position.y = label_offset_y
+
+
+## Set afterburner trail X offset (distance behind ship center)
+func set_trail_offset_x(offset: float) -> void:
+	_trail_offset_x = offset
+	print("[PreviewSpaceship] Trail offset X set to: ", offset)
+
+
+## Enable/disable perpetual launch mode for debugging
+func set_perpetual_launch(enabled: bool) -> void:
+	_perpetual_launch = enabled
+	print("[PreviewSpaceship] Perpetual launch mode: ", enabled)
+	if enabled and _state == State.IDLE:
+		# Start launching immediately
+		launch("DEBUG", "Test", null)

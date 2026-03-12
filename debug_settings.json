@@ -28,7 +28,9 @@
 	"preview": {
 		"label_offset_x": 0.0,
 		"label_offset_y": 0.0,
-		"position_y": 0.780000000000655
+		"position_y": 0.780000000000655,
+		"trail_offset_x": 330.0,
+		"perpetual_launch": false
 	},
 	"space_traffic": {
 		"label_offset_x_looking_left": 35.0,
