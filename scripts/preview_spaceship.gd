@@ -601,8 +601,7 @@ func _on_ship_selected(texture: Texture2D) -> void:
 
 
 func _start_ship_transition(new_texture: Texture2D) -> void:
-	"""Start a left-to-right wipe transition from old ship to new ship (comparison slider style).
-	Both ships maintain the holographic blueprint effect during the transition."""
+	"""Start a right-to-left wipe transition between old and new ship."""
 	if not sprite or not new_texture:
 		return
 	
@@ -611,32 +610,39 @@ func _start_ship_transition(new_texture: Texture2D) -> void:
 		_transition_tween.kill()
 	_cleanup_transition()
 	
-	# Copy current blueprint shader parameters (if any)
+	# Store old texture before changing
+	var old_texture := sprite.texture
+	if not old_texture:
+		sprite.texture = new_texture
+		sprite.scale = Vector2(-preview_scale, preview_scale)
+		return
+	
+	# Copy current blueprint shader parameters
 	var current_params := _get_blueprint_params()
 	
-	# Create old sprite with current texture ON TOP (will be wiped away from left)
+	# Create old sprite with current texture ON TOP (will be wiped away)
 	_old_sprite = Sprite2D.new()
-	_old_sprite.texture = sprite.texture
+	_old_sprite.texture = old_texture
 	_old_sprite.scale = sprite.scale
 	_old_sprite.position = sprite.position
-	_old_sprite.z_index = sprite.z_index + 1  # On top of new sprite
+	_old_sprite.z_index = sprite.z_index + 1
 	add_child(_old_sprite)
 	
-	# Create blueprint material for OLD sprite with wipe_mode=2 (show RIGHT side only)
+	# Create blueprint material for OLD sprite with wipe_mode=2 (show RIGHT side)
 	_old_sprite_material = ShaderMaterial.new()
 	_old_sprite_material.shader = BLUEPRINT_SHADER
 	_apply_blueprint_params(_old_sprite_material, current_params)
 	_old_sprite_material.set_shader_parameter("wipe_progress", 0.0)
-	_old_sprite_material.set_shader_parameter("wipe_mode", 2)  # Show RIGHT (old ship fading)
+	_old_sprite_material.set_shader_parameter("wipe_mode", 2)
 	_old_sprite_material.set_shader_parameter("wipe_edge_softness", 0.02)
 	_old_sprite.material = _old_sprite_material
 	
-	# Create blueprint material for NEW sprite with wipe_mode=1 (show LEFT side only)
+	# Create blueprint material for NEW sprite with wipe_mode=1 (show LEFT side)
 	_new_sprite_material = ShaderMaterial.new()
 	_new_sprite_material.shader = BLUEPRINT_SHADER
 	_apply_blueprint_params(_new_sprite_material, current_params)
 	_new_sprite_material.set_shader_parameter("wipe_progress", 0.0)
-	_new_sprite_material.set_shader_parameter("wipe_mode", 1)  # Show LEFT (new ship revealing)
+	_new_sprite_material.set_shader_parameter("wipe_mode", 1)
 	_new_sprite_material.set_shader_parameter("wipe_edge_softness", 0.02)
 	
 	# Set new texture and material on main sprite
@@ -644,11 +650,11 @@ func _start_ship_transition(new_texture: Texture2D) -> void:
 	sprite.scale = Vector2(-preview_scale, preview_scale)
 	sprite.material = _new_sprite_material
 	
-	# Create transition animation - wipe both sprites simultaneously
+	# Create transition animation (linear speed)
 	_transition_tween = create_tween()
 	_transition_tween.tween_method(_set_wipe_progress, 0.0, 1.0, TRANSITION_DURATION)
 	
-	# Cleanup after transition - restore normal blueprint shader
+	# Cleanup after transition
 	_transition_tween.tween_callback(_cleanup_transition)
 
 
@@ -686,12 +692,10 @@ func _set_wipe_progress(value: float) -> void:
 
 func _cleanup_transition() -> void:
 	"""Clean up transition resources and restore normal blueprint shader."""
-	# Remove old sprite
 	if _old_sprite and is_instance_valid(_old_sprite):
 		_old_sprite.queue_free()
 		_old_sprite = null
 	
-	# Restore blueprint material on main sprite (with wipe disabled)
 	if sprite and _blueprint_material:
 		sprite.material = _blueprint_material
 	
