@@ -10,7 +10,8 @@ signal ship_selected(index: int)
 var _generated_ships: Array[Dictionary] = []
 
 const SAVE_DIR := "user://generated_spaceships/"
-const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel, facing towards right, maintain the aspect ratio of the reference images"
+const SYSTEM_PROMPT := "facing towards right, maintain the aspect ratio of the reference images"
+const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel"
 
 const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/military_frigate.png",
@@ -274,7 +275,8 @@ func _on_generate_pressed() -> void:
 
 func _start_generation(prompt: String) -> void:
 	_is_generating = true
-	_current_prompt = prompt
+	# Append system prompt to user input
+	_current_prompt = prompt + ", " + SYSTEM_PROMPT
 	generate_button.disabled = true
 	generate_button.text = "BUILDING..."
 	_show_progress()
