@@ -18,11 +18,11 @@ const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/military_frigate.png",
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/mining_vessel.png",
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/nimble_transport.png",
-	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_3.png",
+	#"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_3.png",
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_1.png",
-	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_2.png",
+	#"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/speeder_2.png",
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_1.png",
-	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_2.png",
+	#"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_2.png",
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_3.png"
 ]
 
@@ -31,7 +31,7 @@ const REFERENCE_IMAGES := [
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
 @onready var prompt_input: TextEdit = $MarginContainer/VBoxContainer/PromptInput
 @onready var progress_bar: HBoxContainer = $MarginContainer/VBoxContainer/ProgressBar
-@onready var reference_container: HBoxContainer = $MarginContainer/VBoxContainer/ReferenceScroll/ReferenceContainer
+@onready var reference_container: GridContainer = $MarginContainer/VBoxContainer/ReferenceScroll/ReferenceContainer
 
 # Progress bar colors
 const COLOR_FILLED := Color(0.3, 0.7, 0.8, 1.0)
@@ -54,7 +54,7 @@ var _preview_spaceship: Node = null
 var _reference_download_queue: Array = []
 var _reference_textures: Array[Texture2D] = []
 
-const THUMB_SIZE := Vector2(60, 40)
+const THUMB_SIZE := Vector2(96, 64)
 const SELECTED_COLOR := Color(0, 0.8, 1, 1)
 const UNSELECTED_COLOR := Color(0.5, 0.6, 0.7, 0.6)
 
@@ -174,6 +174,8 @@ func _create_reference_buttons() -> void:
 	for i in range(REFERENCE_IMAGES.size()):
 		var btn := TextureButton.new()
 		btn.custom_minimum_size = THUMB_SIZE
+		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		btn.ignore_texture_size = true
 		btn.flip_h = true  # Flip to face left (matching preview ship)
@@ -181,6 +183,7 @@ func _create_reference_buttons() -> void:
 		# Add border panel behind button
 		var panel := PanelContainer.new()
 		panel.custom_minimum_size = THUMB_SIZE + Vector2(4, 4)
+		panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		
 		var style := StyleBoxFlat.new()
 		style.bg_color = Color(0, 0.05, 0.1, 0.8)

@@ -417,16 +417,16 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
-offset_top = -220.0
 offset_right = 340.0
 offset_bottom = -20.0
 grow_vertical = 0
+size_flags_vertical = 8
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 script = ExtResource("14_generator")
 
 [node name="MarginContainer" type="MarginContainer" parent="ConsoleUI/GeneratorPanel" unique_id=838764521]
 layout_mode = 2
-size_flags_vertical = 3
+size_flags_vertical = 8
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 12
@@ -434,7 +434,7 @@ theme_override_constants/margin_bottom = 8
 
 [node name="VBoxContainer" type="VBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer" unique_id=771689962]
 layout_mode = 2
-size_flags_vertical = 3
+size_flags_vertical = 8
 theme_override_constants/separation = 12
 
 [node name="TitleRow" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=1335030017]
@@ -451,15 +451,17 @@ theme_override_font_sizes/font_size = 13
 text = "[ BLUEPRINT ]"
 
 [node name="ReferenceScroll" type="ScrollContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=486732993]
-custom_minimum_size = Vector2(0, 50)
+custom_minimum_size = Vector2(0, 200)
 layout_mode = 2
-horizontal_scroll_mode = 3
-vertical_scroll_mode = 0
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 3
 
-[node name="ReferenceContainer" type="HBoxContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ReferenceScroll" unique_id=1666803162]
+[node name="ReferenceContainer" type="GridContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ReferenceScroll" unique_id=1666803162]
 layout_mode = 2
-size_flags_horizontal = 0
-theme_override_constants/separation = 6
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+columns = 3
 
 [node name="PromptInput" type="TextEdit" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=1853885926]
 custom_minimum_size = Vector2(0, 60)
