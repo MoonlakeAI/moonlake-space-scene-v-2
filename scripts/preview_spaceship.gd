@@ -20,6 +20,14 @@ const SHIP_TEXTURES: Array[String] = [
 const DEFAULT_NAME := ""
 const DEFAULT_ROLE := ""
 
+# Role-to-emblem texture mapping
+const ROLE_EMBLEMS: Dictionary = {
+	"Design": "res://assets/images/emblems/design.png",
+	"Engineering": "res://assets/images/emblems/engineering.png",
+	"Creative": "res://assets/images/emblems/creative.png",
+	"Production": "res://assets/images/emblems/production.png",
+}
+
 @export var preview_scale: float = 0.8  ## Scale of the preview ship
 @export var label_offset_x: float = 0.0  ## Horizontal offset for labels (when facing left)
 @export var label_offset_y: float = 0.0  ## Vertical offset for labels (0 = centered on ship)
@@ -42,8 +50,8 @@ const BOB_SPEED: float = 0.2  ## Cycles per second (slow and dreamy)
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var label_container: Control = $LabelContainer
-@onready var name_label: Label = $LabelContainer/VBoxContainer/NameLabel
-@onready var role_label: Label = $LabelContainer/VBoxContainer/RoleLabel
+@onready var name_label: Label = $LabelContainer/HBoxContainer/NameLabel
+@onready var role_emblem: TextureRect = $LabelContainer/HBoxContainer/RoleEmblem
 
 var _generator_panel: PanelContainer
 var _console_panel: PanelContainer
@@ -77,8 +85,9 @@ func _ready() -> void:
 	# Set default label text
 	if name_label:
 		name_label.text = DEFAULT_NAME
-	if role_label:
-		role_label.text = DEFAULT_ROLE
+	if role_emblem:
+		role_emblem.texture = null
+		role_emblem.visible = false
 	
 	# Apply initial label offset
 	if label_container:
@@ -182,12 +191,15 @@ func _on_name_changed(new_text: String) -> void:
 func _on_role_changed(index: int) -> void:
 	if _state != State.IDLE:
 		return
-	if role_label and _role_input:
+	if role_emblem and _role_input:
 		var role_text := _role_input.get_item_text(index)
-		if role_text.strip_edges().is_empty():
-			role_label.text = DEFAULT_ROLE
+		var emblem_path = ROLE_EMBLEMS.get(role_text, "")
+		if emblem_path != "":
+			role_emblem.texture = load(emblem_path)
+			role_emblem.visible = true
 		else:
-			role_label.text = role_text
+			role_emblem.texture = null
+			role_emblem.visible = false
 
 
 ## Trigger the launch animation sequence
@@ -262,8 +274,9 @@ func _dock_next_ship() -> void:
 	# Reset labels for next ship
 	if name_label:
 		name_label.text = DEFAULT_NAME
-	if role_label:
-		role_label.text = DEFAULT_ROLE
+	if role_emblem:
+		role_emblem.texture = null
+		role_emblem.visible = false
 	
 	# Calculate positions
 	var viewport_size := get_viewport_rect().size

@@ -60,6 +60,14 @@ const ROLE_THEME_COLORS: Dictionary = {
 }
 const DEFAULT_THEME_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 
+# Role-to-emblem texture mapping
+const ROLE_EMBLEMS: Dictionary = {
+	"Design": "res://assets/images/emblems/design.png",
+	"Engineering": "res://assets/images/emblems/engineering.png",
+	"Creative": "res://assets/images/emblems/creative.png",
+	"Production": "res://assets/images/emblems/production.png",
+}
+
 # Theme color for this ship (set based on role)
 var theme_color: Color = DEFAULT_THEME_COLOR
 
@@ -107,8 +115,8 @@ const TRAIL_GRADIENT_SHADER = preload("res://shaders/lightspeed_trail.gdshader")
 const AFTERBURNER_TRAIL_SHADER = preload("res://shaders/afterburner_trail.gdshader")
 
 @onready var sprite: Sprite2D = $Sprite2D
-@onready var name_label: Label = $LabelContainer/VBoxContainer/NameLabel
-@onready var role_label: Label = $LabelContainer/VBoxContainer/RoleLabel
+@onready var name_label: Label = $LabelContainer/HBoxContainer/NameLabel
+@onready var role_emblem: TextureRect = $LabelContainer/HBoxContainer/RoleEmblem
 @onready var label_container: Control = $LabelContainer
 
 # Store original label width for positioning
@@ -782,8 +790,15 @@ func update_labels() -> void:
 	
 	if name_label:
 		name_label.text = ship_name.to_upper()
-	if role_label:
-		role_label.text = role
+	
+	# Set role emblem texture based on role
+	if role_emblem:
+		var emblem_path = ROLE_EMBLEMS.get(role, "")
+		if emblem_path != "":
+			role_emblem.texture = load(emblem_path)
+			role_emblem.visible = true
+		else:
+			role_emblem.visible = false
 	
 	# Keep labels upright and properly positioned when ship is flipped
 	if label_container:

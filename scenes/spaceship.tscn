@@ -49,30 +49,30 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="LabelContainer" unique_id=780557852]
+[node name="HBoxContainer" type="HBoxContainer" parent="LabelContainer" unique_id=780557852]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 8
 alignment = 1
 
-[node name="NameLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=1429957993]
+[node name="RoleEmblem" type="TextureRect" parent="LabelContainer/HBoxContainer" unique_id=465078294]
 material = SubResource("ShaderMaterial_holo")
 layout_mode = 2
+custom_minimum_size = Vector2(28, 28)
+size_flags_vertical = 4
+expand_mode = 3
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="LabelContainer/HBoxContainer" unique_id=1429957993]
+material = SubResource("ShaderMaterial_holo")
+layout_mode = 2
+size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
 theme_override_fonts/font = SubResource("FontVariation_spaced")
 theme_override_font_sizes/font_size = 22
 text = "SHIP NAME"
-horizontal_alignment = 1
-
-[node name="RoleLabel" type="Label" parent="LabelContainer/VBoxContainer" unique_id=465078294]
-visible = false
-material = SubResource("ShaderMaterial_holo")
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 0.8)
-theme_override_font_sizes/font_size = 14
-text = "Role"
 horizontal_alignment = 1

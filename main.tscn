@@ -19,6 +19,10 @@
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="17_holo_shader"]
 [ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="18_label_bg_shader"]
 [ext_resource type="FontFile" uid="uid://b8il6578g5cev" path="res://assets/fonts/Space_Grotesk/static/SpaceGrotesk-Medium.ttf" id="19_font"]
+[ext_resource type="Texture2D" path="res://assets/images/emblems/creative.png" id="20_emblem_creative"]
+[ext_resource type="Texture2D" path="res://assets/images/emblems/design.png" id="20_emblem_design"]
+[ext_resource type="Texture2D" path="res://assets/images/emblems/engineering.png" id="20_emblem_engineering"]
+[ext_resource type="Texture2D" path="res://assets/images/emblems/production.png" id="20_emblem_production"]
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -283,31 +287,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PreviewLayer/PreviewSpaceship/LabelContainer" unique_id=1806292254]
+[node name="HBoxContainer" type="HBoxContainer" parent="PreviewLayer/PreviewSpaceship/LabelContainer" unique_id=1806292254]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 8
 alignment = 1
 
-[node name="NameLabel" type="Label" parent="PreviewLayer/PreviewSpaceship/LabelContainer/VBoxContainer" unique_id=980330061]
+[node name="RoleEmblem" type="TextureRect" parent="PreviewLayer/PreviewSpaceship/LabelContainer/HBoxContainer" unique_id=1185693442]
 material = SubResource("ShaderMaterial_preview_holo")
 layout_mode = 2
+custom_minimum_size = Vector2(28, 28)
+size_flags_vertical = 4
+expand_mode = 3
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="PreviewLayer/PreviewSpaceship/LabelContainer/HBoxContainer" unique_id=980330061]
+material = SubResource("ShaderMaterial_preview_holo")
+layout_mode = 2
+size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
 theme_override_fonts/font = SubResource("FontVariation_preview_spaced")
 theme_override_font_sizes/font_size = 22
 text = "AWAITING DESIGNATION"
-horizontal_alignment = 1
-
-[node name="RoleLabel" type="Label" parent="PreviewLayer/PreviewSpaceship/LabelContainer/VBoxContainer" unique_id=1185693442]
-material = SubResource("ShaderMaterial_preview_holo")
-layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.75, 0.8, 0.8)
-theme_override_font_sizes/font_size = 14
-text = "Unassigned"
 horizontal_alignment = 1
 
 [node name="HangarOverlay" type="CanvasLayer" parent="." unique_id=559100088]
