@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://sfldqnae5dab" path="res://scripts/space_background.gd" id="1_script"]
 [ext_resource type="Shader" uid="uid://bljc2nm0esmmp" path="res://shaders/space_background.gdshader" id="2_shader"]
 [ext_resource type="Texture2D" uid="uid://kde6bc5upb6g" path="res://assets/images/galaxy.png" id="3_galaxy"]
-[ext_resource type="Texture2D" path="res://assets/images/space_background.png" id="4_space_bg"]
+[ext_resource type="Texture2D" uid="uid://3es75846lcri" path="res://assets/images/space_background.png" id="4_space_bg"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_space"]
 shader = ExtResource("2_shader")
@@ -19,7 +19,7 @@ layer = -100
 script = ExtResource("1_script")
 galaxy_rotation_speed = 0.015
 
-[node name="SpaceBackgroundImage" type="TextureRect" parent="."]
+[node name="SpaceBackgroundImage" type="TextureRect" parent="." unique_id=1121788625]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

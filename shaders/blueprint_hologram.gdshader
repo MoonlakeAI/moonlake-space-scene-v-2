@@ -5,8 +5,8 @@ shader_type canvas_item;
 
 uniform vec4 holo_color : source_color = vec4(0.1, 0.6, 0.9, 1.0);
 uniform vec4 grid_color : source_color = vec4(0.2, 0.8, 1.0, 0.3);
-uniform float chunk_scale : hint_range(1.0, 1000.0) = 250.0;
-uniform float chunk_threshold : hint_range(0.0, 1.0) = 0.35;
+uniform float chunk_scale : hint_range(1.0, 1000.0) = 550.0;
+uniform float chunk_threshold : hint_range(0.0, 1.0) = 0;
 uniform float chunk_speed : hint_range(0.1, 2.0) = 0.4;
 uniform float scanline_density : hint_range(20.0, 150.0) = 60.0;
 uniform float scanline_opacity : hint_range(0.0, 0.5) = 0.15;
@@ -65,14 +65,21 @@ void fragment() {
         float chunk_noise2 = fbm(chunk_uv * 0.7 + vec2(50.0), time * chunk_speed * 0.6 + 10.0);
         chunk_noise = mix(chunk_noise, chunk_noise2, 0.4);
         
-        // Determine if this chunk is visible
-        float chunk_visible = smoothstep(chunk_threshold - 0.1, chunk_threshold + 0.1, chunk_noise);
+        // Left-to-right sweep: adjust threshold based on x position
+        // When threshold=1, all is hologram. When threshold=0, all is solid.
+        // Left side (uv.x=0) materializes first, right side (uv.x=1) last
+        float sweep_offset = uv.x * 0.5;
+        float adjusted_threshold = chunk_threshold * 1.5 - sweep_offset;
+        adjusted_threshold = clamp(adjusted_threshold, 0.0, 1.0);
+        
+        // Determine if this chunk is visible (hologram) based on adjusted threshold
+        float chunk_visible = smoothstep(adjusted_threshold - 0.1, adjusted_threshold + 0.1, chunk_noise);
         
         // Edge detection for chunk borders (glowing edges where chunks appear)
-        float chunk_edge = abs(chunk_noise - chunk_threshold);
+        float chunk_edge = abs(chunk_noise - adjusted_threshold);
         chunk_edge = 1.0 - smoothstep(0.0, 0.15, chunk_edge);
         
-        // === SCANLINES ===
+        // === SCANLINES (left to right) ===
         float scanline = sin(uv.x * scanline_density + time * 1.5) * 0.5 + 0.5;
         scanline = 1.0 - (scanline * scanline * scanline_opacity);
         
