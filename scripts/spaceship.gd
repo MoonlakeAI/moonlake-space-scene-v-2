@@ -625,6 +625,12 @@ func set_movement_behavior(p_drift_amplitude: float, p_drift_frequency: float, p
 	time_alive = randf() * 10.0
 
 func update_labels() -> void:
+	# Hide labels entirely for Bot ships
+	if role == "Bot":
+		if label_container:
+			label_container.visible = false
+		return
+	
 	if name_label:
 		name_label.text = ship_name.to_upper()
 	if role_label:
