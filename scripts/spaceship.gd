@@ -537,8 +537,29 @@ func _create_afterburner_trail() -> void:
 	# Apply neon afterburner shader with theme color
 	var trail_material = ShaderMaterial.new()
 	trail_material.shader = AFTERBURNER_TRAIL_SHADER
-	trail_material.set_shader_parameter("core_color", Color(1.0, 0.95, 0.9, 1.0))  # Bright white-ish core
-	trail_material.set_shader_parameter("glow_color", theme_color)  # Use ship's theme color for glow
+	
+	# Calculate trail colors based on theme
+	var core_col: Color
+	var glow_col: Color
+	
+	if theme_color == DEFAULT_THEME_COLOR:
+		# Bot ships: use default white core with subtle cyan glow
+		core_col = Color(1.0, 0.98, 0.95, 1.0)  # Warm white core
+		glow_col = Color(0.7, 0.85, 1.0, 1.0)   # Subtle cool white/cyan glow
+	else:
+		# Player ships: use theme color for the trail hue
+		# Core is a brightened/lighter version of theme color
+		core_col = Color(
+			minf(theme_color.r + 0.4, 1.0),
+			minf(theme_color.g + 0.4, 1.0),
+			minf(theme_color.b + 0.4, 1.0),
+			1.0
+		)
+		# Glow uses the theme color directly
+		glow_col = theme_color
+	
+	trail_material.set_shader_parameter("core_color", core_col)
+	trail_material.set_shader_parameter("glow_color", glow_col)
 	trail_material.set_shader_parameter("opacity", 1.0)
 	trail_material.set_shader_parameter("direction", direction)
 	trail_material.set_shader_parameter("glow_intensity", 2.5)
