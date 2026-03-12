@@ -15,6 +15,11 @@ uniform float grid_thickness : hint_range(0.01, 0.1) = 0.2;
 uniform float edge_glow : hint_range(0.0, 3.0) = 1.5;
 uniform float alpha_base : hint_range(0.3, 1.0) = 0.8;
 
+// Wipe transition parameters (for ship swap effect)
+uniform float wipe_progress : hint_range(0.0, 1.0) = 0.0;
+uniform int wipe_mode : hint_range(0, 2) = 0;  // 0 = disabled, 1 = show left (new), 2 = show right (old)
+uniform float wipe_edge_softness : hint_range(0.0, 0.1) = 0.02;
+
 // Noise functions for chunk effect
 float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -140,7 +145,20 @@ void fragment() {
         final_color = mix(final_color, vec3(0.5, 0.9, 1.0), chunk_edge * 0.8);
         final_alpha = max(final_alpha, chunk_edge * tex_color.a);
         
-        COLOR = vec4(final_color, clamp(final_alpha, 0.0, 1.0));
+        // === WIPE TRANSITION (right to left) ===
+        float wipe_alpha = 1.0;
+        float inv_x = 1.0 - uv.x;  // Invert X for right-to-left wipe
+        if (wipe_mode == 1) {
+            // Show RIGHT side only (new ship being revealed from right)
+            // Visible where inv_x < wipe_progress (i.e., UV.x > 1-progress)
+            wipe_alpha = 1.0 - smoothstep(wipe_progress - wipe_edge_softness, wipe_progress + wipe_edge_softness, inv_x);
+        } else if (wipe_mode == 2) {
+            // Show LEFT side only (old ship being hidden from right)
+            // Visible where inv_x > wipe_progress (i.e., UV.x < 1-progress)
+            wipe_alpha = smoothstep(wipe_progress - wipe_edge_softness, wipe_progress + wipe_edge_softness, inv_x);
+        }
+        
+        COLOR = vec4(final_color, clamp(final_alpha * wipe_alpha, 0.0, 1.0));
     } else {
         // Fully transparent pixel
         COLOR = vec4(0.0);

@@ -85,6 +85,14 @@ var _trail_start_y: float = 0.0
 # Debug: perpetual launch mode
 var _perpetual_launch: bool = false
 
+# Ship transition effect variables
+var _transition_tween: Tween = null
+var _old_sprite: Sprite2D = null
+var _old_sprite_material: ShaderMaterial = null
+var _new_sprite_material: ShaderMaterial = null
+const TRANSITION_DURATION: float = 0.5  # Duration of the wipe transition
+const BLUEPRINT_SHADER = preload("res://shaders/blueprint_hologram.gdshader")
+
 
 func _ready() -> void:
 	# Load ship textures
@@ -584,14 +592,111 @@ func _sync_texture() -> void:
 
 func _on_image_generated(_path: String, texture: Texture2D = null) -> void:
 	if _state == State.IDLE and texture:
-		sprite.texture = texture
-		sprite.scale = Vector2(-preview_scale, preview_scale)
+		_start_ship_transition(texture)
 
 
 func _on_ship_selected(texture: Texture2D) -> void:
 	if _state == State.IDLE and texture:
-		sprite.texture = texture
-		sprite.scale = Vector2(-preview_scale, preview_scale)
+		_start_ship_transition(texture)
+
+
+func _start_ship_transition(new_texture: Texture2D) -> void:
+	"""Start a left-to-right wipe transition from old ship to new ship (comparison slider style).
+	Both ships maintain the holographic blueprint effect during the transition."""
+	if not sprite or not new_texture:
+		return
+	
+	# Cancel any existing transition
+	if _transition_tween and _transition_tween.is_valid():
+		_transition_tween.kill()
+	_cleanup_transition()
+	
+	# Copy current blueprint shader parameters (if any)
+	var current_params := _get_blueprint_params()
+	
+	# Create old sprite with current texture ON TOP (will be wiped away from left)
+	_old_sprite = Sprite2D.new()
+	_old_sprite.texture = sprite.texture
+	_old_sprite.scale = sprite.scale
+	_old_sprite.position = sprite.position
+	_old_sprite.z_index = sprite.z_index + 1  # On top of new sprite
+	add_child(_old_sprite)
+	
+	# Create blueprint material for OLD sprite with wipe_mode=2 (show RIGHT side only)
+	_old_sprite_material = ShaderMaterial.new()
+	_old_sprite_material.shader = BLUEPRINT_SHADER
+	_apply_blueprint_params(_old_sprite_material, current_params)
+	_old_sprite_material.set_shader_parameter("wipe_progress", 0.0)
+	_old_sprite_material.set_shader_parameter("wipe_mode", 2)  # Show RIGHT (old ship fading)
+	_old_sprite_material.set_shader_parameter("wipe_edge_softness", 0.02)
+	_old_sprite.material = _old_sprite_material
+	
+	# Create blueprint material for NEW sprite with wipe_mode=1 (show LEFT side only)
+	_new_sprite_material = ShaderMaterial.new()
+	_new_sprite_material.shader = BLUEPRINT_SHADER
+	_apply_blueprint_params(_new_sprite_material, current_params)
+	_new_sprite_material.set_shader_parameter("wipe_progress", 0.0)
+	_new_sprite_material.set_shader_parameter("wipe_mode", 1)  # Show LEFT (new ship revealing)
+	_new_sprite_material.set_shader_parameter("wipe_edge_softness", 0.02)
+	
+	# Set new texture and material on main sprite
+	sprite.texture = new_texture
+	sprite.scale = Vector2(-preview_scale, preview_scale)
+	sprite.material = _new_sprite_material
+	
+	# Create transition animation - wipe both sprites simultaneously
+	_transition_tween = create_tween()
+	_transition_tween.tween_method(_set_wipe_progress, 0.0, 1.0, TRANSITION_DURATION)
+	
+	# Cleanup after transition - restore normal blueprint shader
+	_transition_tween.tween_callback(_cleanup_transition)
+
+
+func _get_blueprint_params() -> Dictionary:
+	"""Get current blueprint shader parameters to copy to transition materials."""
+	var params := {}
+	if _blueprint_material:
+		params["holo_color"] = _blueprint_material.get_shader_parameter("holo_color")
+		params["chunk_scale"] = _blueprint_material.get_shader_parameter("chunk_scale")
+		params["chunk_threshold"] = _blueprint_material.get_shader_parameter("chunk_threshold")
+		params["chunk_speed"] = _blueprint_material.get_shader_parameter("chunk_speed")
+		params["scanline_density"] = _blueprint_material.get_shader_parameter("scanline_density")
+		params["scanline_opacity"] = _blueprint_material.get_shader_parameter("scanline_opacity")
+		params["grid_density"] = _blueprint_material.get_shader_parameter("grid_density")
+		params["grid_thickness"] = _blueprint_material.get_shader_parameter("grid_thickness")
+		params["edge_glow"] = _blueprint_material.get_shader_parameter("edge_glow")
+		params["alpha_base"] = _blueprint_material.get_shader_parameter("alpha_base")
+	return params
+
+
+func _apply_blueprint_params(target_mat: ShaderMaterial, params: Dictionary) -> void:
+	"""Apply blueprint shader parameters to a material."""
+	for key in params:
+		if params[key] != null:
+			target_mat.set_shader_parameter(key, params[key])
+
+
+func _set_wipe_progress(value: float) -> void:
+	"""Set wipe progress for both old and new sprites."""
+	if _old_sprite_material:
+		_old_sprite_material.set_shader_parameter("wipe_progress", value)
+	if _new_sprite_material:
+		_new_sprite_material.set_shader_parameter("wipe_progress", value)
+
+
+func _cleanup_transition() -> void:
+	"""Clean up transition resources and restore normal blueprint shader."""
+	# Remove old sprite
+	if _old_sprite and is_instance_valid(_old_sprite):
+		_old_sprite.queue_free()
+		_old_sprite = null
+	
+	# Restore blueprint material on main sprite (with wipe disabled)
+	if sprite and _blueprint_material:
+		sprite.material = _blueprint_material
+	
+	_old_sprite_material = null
+	_new_sprite_material = null
 
 
 ## Set Y position as a ratio of screen height (called by DebugPanel)
