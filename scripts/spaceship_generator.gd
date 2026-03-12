@@ -4,14 +4,15 @@ extends PanelContainer
 ## Calls backend API to generate spaceship images and saves them locally
 
 signal image_generated(path: String, texture: Texture2D)
-signal ship_selected(index: int)
+signal ship_selected(texture: Texture2D)
 
 ## Structure for tracking generated ships: {timestamp: String, path: String, texture: Texture2D, prompt: String}
 var _generated_ships: Array[Dictionary] = []
 
 const SAVE_DIR := "user://generated_spaceships/"
 const SYSTEM_PROMPT := "facing towards right, maintain the aspect ratio of the reference images,"
-const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel"
+##const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel"
+const DEFAULT_PROMPT := ""
 
 const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/military_frigate.png",
@@ -25,11 +26,7 @@ const REFERENCE_IMAGES := [
 	"https://spatio-social-media.s3.us-east-1.amazonaws.com/gdc-demo-assets/spaceship_luxury_3.png"
 ]
 
-const SHIP_TEXTURES: Array[String] = [
-	"res://assets/images/spaceships/spaceship_military_1.png",
-	"res://assets/images/spaceships/spaceship_mining_1.png",
-	"res://assets/images/spaceships/spaceship_transport_1.png"
-]
+# Reference textures are loaded from URLs, no local fallback needed
 
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
 @onready var prompt_input: TextEdit = $MarginContainer/VBoxContainer/PromptInput
@@ -47,13 +44,13 @@ var _current_job_id: String = ""
 var _current_prompt: String = ""
 var _is_generating := false
 var _progress_blocks: Array[ColorRect] = []
-var _loaded_textures: Array[Texture2D] = []
-var _current_ship_index: int = 0
 var _generated_texture: Texture2D = null
+var _current_reference_texture: Texture2D = null
 
 # Reference selector state
 var _reference_buttons: Array[TextureButton] = []
 var _selected_reference_index: int = 0
+var _preview_spaceship: Node = null
 var _reference_download_queue: Array = []
 var _reference_textures: Array[Texture2D] = []
 
@@ -92,9 +89,6 @@ func _ready() -> void:
 	# Hide progress bar initially
 	progress_bar.visible = false
 	
-	# Load ship textures and select initial ship
-	_load_ship_textures()
-	_select_random_ship()
 	
 	# Ensure save directory exists
 	_ensure_save_dir()
@@ -104,26 +98,47 @@ func _ready() -> void:
 	
 	# Start loading reference images
 	_start_loading_references()
+	
+	# Find and connect to preview spaceship
+	await get_tree().process_frame
+	_find_preview_spaceship()
 
 
-func _load_ship_textures() -> void:
-	for path in SHIP_TEXTURES:
-		var texture = load(path) as Texture2D
-		if texture:
-			_loaded_textures.append(texture)
+func _find_preview_spaceship() -> void:
+	var preview_layer := get_tree().root.find_child("PreviewLayer", true, false)
+	if preview_layer:
+		_preview_spaceship = preview_layer.get_node_or_null("PreviewSpaceship")
+		if _preview_spaceship and _preview_spaceship.has_signal("request_next_ship"):
+			_preview_spaceship.request_next_ship.connect(_on_request_next_ship)
 
 
-func _select_random_ship() -> void:
-	if _loaded_textures.is_empty():
+func _on_request_next_ship() -> void:
+	# Select a different reference (not the current one)
+	var available_indices: Array[int] = []
+	for i in range(_reference_textures.size()):
+		if i != _selected_reference_index and _reference_textures[i] != null:
+			available_indices.append(i)
+	
+	if available_indices.is_empty():
+		# No other loaded references, keep current
 		return
-	_current_ship_index = randi() % _loaded_textures.size()
-	ship_selected.emit(_current_ship_index)
+	
+	# Pick a random different reference
+	var new_index: int = available_indices[randi() % available_indices.size()]
+	_update_reference_selection(new_index)
+	
+	# Update and emit the new texture
+	_selected_reference_index = new_index
+	_current_reference_texture = _reference_textures[new_index]
+	_generated_texture = null  # Clear AI texture so reference is used
+	ship_selected.emit(_current_reference_texture)
 
 
-func get_current_ship_texture() -> Texture2D:
-	if _current_ship_index < _loaded_textures.size():
-		return _loaded_textures[_current_ship_index]
-	return null
+## Returns the texture currently shown in the preview (AI-generated or selected reference)
+func get_current_preview_texture() -> Texture2D:
+	if _generated_texture:
+		return _generated_texture
+	return _current_reference_texture
 
 
 func _update_progress(percent: int) -> void:
@@ -161,6 +176,7 @@ func _create_reference_buttons() -> void:
 		btn.custom_minimum_size = THUMB_SIZE
 		btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
 		btn.ignore_texture_size = true
+		btn.flip_h = true  # Flip to face left (matching preview ship)
 		
 		# Add border panel behind button
 		var panel := PanelContainer.new()
@@ -235,10 +251,22 @@ func _on_reference_image_loaded(result: int, code: int, body: PackedByteArray, i
 	var texture := ImageTexture.create_from_image(image)
 	_reference_textures[index] = texture
 	_reference_buttons[index].texture_normal = texture
+	
+	# If this is the selected reference, update preview
+	if index == _selected_reference_index:
+		_current_reference_texture = texture
+		ship_selected.emit(texture)
 
 
 func _on_reference_selected(index: int) -> void:
 	_update_reference_selection(index)
+	# Update preview with selected reference texture
+	if index >= 0 and index < _reference_textures.size():
+		_current_reference_texture = _reference_textures[index]
+		if _current_reference_texture:
+			# Clear generated texture so preview shows reference
+			_generated_texture = null
+			ship_selected.emit(_current_reference_texture)
 
 
 func _update_reference_selection(index: int) -> void:
@@ -508,11 +536,9 @@ func _play_success_effect() -> void:
 	tween.tween_property(generate_button, "modulate", Color.WHITE, 0.4)
 
 
-## Returns the currently generated texture (or current ship texture if none generated)
+## Returns the currently generated texture (or reference texture if none generated)
 func get_generated_texture() -> Texture2D:
-	if _generated_texture != null:
-		return _generated_texture
-	return get_current_ship_texture()
+	return get_current_preview_texture()
 
 
 ## Returns the list of all generated ships for tracking

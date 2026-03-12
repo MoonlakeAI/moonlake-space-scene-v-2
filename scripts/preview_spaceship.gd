@@ -8,6 +8,7 @@ extends Node2D
 
 signal launch_completed(ship_name: String, ship_role: String, texture: Texture2D)
 signal dock_completed
+signal request_next_ship
 
 enum State { IDLE, LAUNCHING, DOCKING }
 
@@ -265,10 +266,11 @@ func _on_launch_animation_finished() -> void:
 func _dock_next_ship() -> void:
 	_state = State.DOCKING
 	
-	# Cycle to next texture
-	_current_index = (_current_index + 1) % max(1, _loaded_textures.size())
+	# Request generator to select next ship
+	request_next_ship.emit()
 	
-	# Update texture for the next ship
+	# Fallback: cycle local textures if generator doesn't respond
+	_current_index = (_current_index + 1) % max(1, _loaded_textures.size())
 	_sync_texture()
 	
 	# Reset labels for next ship
@@ -348,30 +350,31 @@ func _sync_texture() -> void:
 	if not sprite:
 		return
 	
-	# Try to get generated texture from generator panel first (prioritize AI-generated images)
+	# Try to get texture from generator panel first
 	if _generator_panel and _generator_panel.has_method("get_generated_texture"):
 		var texture: Texture2D = _generator_panel.get_generated_texture()
 		if texture:
 			sprite.texture = texture
-			sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
+			sprite.scale = Vector2(-preview_scale, preview_scale)
 			return
 	
-	# Fallback: use our own loaded textures
+	# Fallback: use local textures for initial load or dock cycling
 	if not _loaded_textures.is_empty():
-		if _current_index >= _loaded_textures.size():
-			_current_index = 0
+		_current_index = _current_index % _loaded_textures.size()
 		sprite.texture = _loaded_textures[_current_index]
-		sprite.scale = Vector2(-preview_scale, preview_scale)  # Flipped to face left
+		sprite.scale = Vector2(-preview_scale, preview_scale)
 
 
-func _on_image_generated(_path: String, _texture: Texture2D = null) -> void:
-	if _state == State.IDLE:
-		_sync_texture()
+func _on_image_generated(_path: String, texture: Texture2D = null) -> void:
+	if _state == State.IDLE and texture:
+		sprite.texture = texture
+		sprite.scale = Vector2(-preview_scale, preview_scale)
 
 
-func _on_ship_selected(_index: int) -> void:
-	if _state == State.IDLE:
-		_sync_texture()
+func _on_ship_selected(texture: Texture2D) -> void:
+	if _state == State.IDLE and texture:
+		sprite.texture = texture
+		sprite.scale = Vector2(-preview_scale, preview_scale)
 
 
 ## Set Y position as a ratio of screen height (called by DebugPanel)

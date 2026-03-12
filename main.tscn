@@ -19,10 +19,6 @@
 [ext_resource type="Shader" uid="uid://dj0xb38ycjug1" path="res://shaders/holographic_text.gdshader" id="17_holo_shader"]
 [ext_resource type="Shader" uid="uid://b4sbutjn7qg3x" path="res://shaders/label_background.gdshader" id="18_label_bg_shader"]
 [ext_resource type="FontFile" uid="uid://b8il6578g5cev" path="res://assets/fonts/Space_Grotesk/static/SpaceGrotesk-Medium.ttf" id="19_font"]
-[ext_resource type="Texture2D" path="res://assets/images/emblems/creative.png" id="20_emblem_creative"]
-[ext_resource type="Texture2D" path="res://assets/images/emblems/design.png" id="20_emblem_design"]
-[ext_resource type="Texture2D" path="res://assets/images/emblems/engineering.png" id="20_emblem_engineering"]
-[ext_resource type="Texture2D" path="res://assets/images/emblems/production.png" id="20_emblem_production"]
 
 [sub_resource type="Environment" id="Environment_planets"]
 background_mode = 1
@@ -76,10 +72,6 @@ shader_parameter/atmosphere_density = 2.5
 shader_parameter/falloff = 4.5
 shader_parameter/glow_intensity = 1.0
 
-[sub_resource type="FontVariation" id="FontVariation_preview_spaced"]
-base_font = ExtResource("19_font")
-spacing_glyph = 3
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_preview_label_bg"]
 shader = ExtResource("18_label_bg_shader")
 shader_parameter/center_color = Color(0, 0.05, 0.1, 0.85)
@@ -95,6 +87,10 @@ shader_parameter/scanline_opacity = 0.12
 shader_parameter/glow_strength = 0.9
 shader_parameter/distortion_amount = 0.0001
 shader_parameter/glitch_chance = 0.01
+
+[sub_resource type="FontVariation" id="FontVariation_preview_spaced"]
+base_font = ExtResource("19_font")
+spacing_glyph = 3
 
 [sub_resource type="ShaderMaterial" id="Material_hangar"]
 shader = ExtResource("13_hangar_shader")
@@ -299,8 +295,8 @@ alignment = 1
 
 [node name="RoleEmblem" type="TextureRect" parent="PreviewLayer/PreviewSpaceship/LabelContainer/HBoxContainer" unique_id=1185693442]
 material = SubResource("ShaderMaterial_preview_holo")
-layout_mode = 2
 custom_minimum_size = Vector2(28, 28)
+layout_mode = 2
 size_flags_vertical = 4
 expand_mode = 3
 stretch_mode = 5
@@ -308,7 +304,6 @@ stretch_mode = 5
 [node name="NameLabel" type="Label" parent="PreviewLayer/PreviewSpaceship/LabelContainer/HBoxContainer" unique_id=980330061]
 material = SubResource("ShaderMaterial_preview_holo")
 layout_mode = 2
-size_flags_vertical = 4
 theme_override_colors/font_color = Color(0.3, 0.9, 1, 1)
 theme_override_fonts/font = SubResource("FontVariation_preview_spaced")
 theme_override_font_sizes/font_size = 22
