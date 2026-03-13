@@ -52,7 +52,7 @@ const ACTIVITY_CHANCE_PER_LANE: float = 0.2  # +20% per lane (Lane 2: 40%, Lane 
 # Role-to-theme color mapping (RGBA)
 # Bots always use white, player ships use role-based colors
 const ROLE_THEME_COLORS: Dictionary = {
-	"Bot": Color(1.0, 1.0, 1.0, 1.0),           # White for bots
+	"Bot": Color(0.2, 0.8, 1.0, 1.0),           # White for bots
 	"Design": Color(0.95, 0.3, 0.5, 1.0),       # Pink/Magenta
 	"Engineering": Color(0.2, 0.8, 1.0, 1.0),   # Cyan
 	"Creative": Color(1.0, 0.6, 0.1, 1.0),      # Orange
@@ -110,6 +110,7 @@ var _afterburner_trail: ColorRect = null
 var _afterburner_pulse_time: float = 0.0
 var _afterburner_trail_offset_x: float = 0.0  # X offset for afterburner trail position
 var _original_sprite_scale: Vector2 = Vector2.ONE
+var _original_sprite_offset: Vector2 = Vector2.ZERO
 const LIGHTSPEED_SHADER_PATH = "res://shaders/lightspeed_jump.gdshader"
 const TRAIL_GRADIENT_SHADER = preload("res://shaders/lightspeed_trail.gdshader")
 const AFTERBURNER_TRAIL_SHADER = preload("res://shaders/afterburner_trail.gdshader")
@@ -334,9 +335,10 @@ func _start_activity_light_speed_jump() -> void:
 	# Setup shader if not already done
 	_setup_lightspeed_shader()
 	
-	# Store original sprite scale (accounting for direction flip)
+	# Store original sprite scale and offset (accounting for direction flip)
 	if sprite:
 		_original_sprite_scale = sprite.scale
+		_original_sprite_offset = sprite.offset
 	
 	# Calculate jump destination - move to end of lane (off-screen)
 	var jump_target_x: float
@@ -358,11 +360,11 @@ func _start_activity_light_speed_jump() -> void:
 	_activity_tween.tween_property(self, "current_speed", 0.0, 0.5).set_ease(Tween.EASE_OUT)
 	_activity_tween.parallel().tween_method(_set_shader_param.bind("glow_intensity"), 0.0, 2.5, 0.5)
 	
-	# Phase 2: Flash moment with scale down to 0.7 (0.1 seconds)
+	# Phase 2: Flash moment with directional X-scale towards jump direction (0.1 seconds)
 	_activity_tween.tween_method(_set_shader_param.bind("flash_intensity"), 0.0, 1.0, 0.1)
 	if sprite:
-		var scaled_down = _original_sprite_scale * 0.7
-		_activity_tween.parallel().tween_property(sprite, "scale", scaled_down, 0.1)
+		# Scale X to 1.33, offset shifts so the back stays fixed and front stretches toward jump
+		_activity_tween.parallel().tween_method(_set_directional_x_scale, 1.0, 1.33, 0.1)
 	
 	# Create gradient trail ColorRect at jump start position (starts with zero width)
 	_activity_tween.tween_callback(_create_gradient_trail.bind(jump_start_x))
@@ -373,9 +375,9 @@ func _start_activity_light_speed_jump() -> void:
 	_activity_tween.parallel().tween_method(_set_shader_param.bind("flash_intensity"), 1.0, 0.0, 0.25)
 	_activity_tween.parallel().tween_method(_set_shader_param.bind("glow_intensity"), 2.5, 1.0, 0.25)
 	
-	# Restore sprite scale after jump
+	# Restore sprite scale and offset after jump
 	if sprite:
-		_activity_tween.parallel().tween_property(sprite, "scale", _original_sprite_scale, 0.2).set_delay(0.15)
+		_activity_tween.parallel().tween_method(_set_directional_x_scale, 1.33, 1.0, 0.2).set_delay(0.15)
 	
 	# Phase 4: Fade out gradient trail (0.5 seconds)
 	_activity_tween.tween_callback(_fade_out_gradient_trail)
@@ -415,6 +417,25 @@ func _set_shader_param(value: float, param_name: String) -> void:
 		_lightspeed_shader.set_shader_parameter(param_name, value)
 
 
+func _set_directional_x_scale(scale_factor: float) -> void:
+	"""Scale sprite X-axis towards jump direction only (back end stays fixed)."""
+	if not sprite:
+		return
+	
+	# Apply X scale while preserving Y
+	sprite.scale.x = _original_sprite_scale.x * scale_factor
+	
+	# Calculate offset to keep the back end fixed
+	# When scaling, the sprite expands/contracts equally from center
+	# We compensate by shifting offset so the trailing edge stays in place
+	if sprite.texture:
+		var texture_width = sprite.texture.get_width()
+		var scale_diff = scale_factor - 1.0
+		# Offset shifts opposite to jump direction (keeps back fixed, front stretches forward)
+		var offset_shift = (texture_width * scale_diff * 0.5) * -direction
+		sprite.offset.x = _original_sprite_offset.x + offset_shift
+
+
 func _create_gradient_trail(start_x: float) -> void:
 	"""Create a ColorRect gradient trail starting at zero width (grows with ship movement)."""
 	# Remove any existing trail
@@ -435,12 +456,15 @@ func _create_gradient_trail(start_x: float) -> void:
 	_lightspeed_trail.set_meta("start_x", start_x)
 	_lightspeed_trail.set_meta("direction", direction)
 	
-	# Apply gradient shader
+	# Apply gradient shader with transparent, high-quality settings
 	var trail_material = ShaderMaterial.new()
 	trail_material.shader = TRAIL_GRADIENT_SHADER
-	trail_material.set_shader_parameter("trail_color", Color(0.4, 0.8, 1.0, 0.8))
-	trail_material.set_shader_parameter("opacity", 1.0)
+	trail_material.set_shader_parameter("trail_color", Color(0.5, 0.85, 1.0, 0.6))
+	trail_material.set_shader_parameter("core_color", Color(0.95, 0.98, 1.0, 1.0))
+	trail_material.set_shader_parameter("opacity", 0.6)
 	trail_material.set_shader_parameter("direction", direction)
+	trail_material.set_shader_parameter("core_intensity", 1.0)
+	trail_material.set_shader_parameter("glow_softness", 0.7)
 	_lightspeed_trail.material = trail_material
 	
 	# Add to parent (same level as ship for proper layering)
@@ -665,9 +689,10 @@ func _on_lightspeed_complete() -> void:
 	elif sprite:
 		sprite.material = null
 	
-	# Restore sprite scale
+	# Restore sprite scale and offset
 	if sprite:
 		sprite.scale = _original_sprite_scale
+		sprite.offset = _original_sprite_offset
 	
 	# Clean up trail if still exists
 	_remove_gradient_trail()
@@ -743,9 +768,10 @@ func _reset_activity_state() -> void:
 		else:
 			sprite.material = null
 	
-	# Restore sprite scale if it was modified
+	# Restore sprite scale and offset if they were modified
 	if sprite and _original_sprite_scale != Vector2.ONE:
 		sprite.scale = _original_sprite_scale
+		sprite.offset = _original_sprite_offset
 	
 	# Clean up any leftover trails
 	_remove_gradient_trail()
