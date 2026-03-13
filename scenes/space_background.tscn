@@ -8,7 +8,7 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_space"]
 shader = ExtResource("2_shader")
 shader_parameter/opacity = 1.0
-shader_parameter/overlay_opacity = 0.5
+shader_parameter/overlay_opacity = 0.3
 shader_parameter/star_density = 0.08
 shader_parameter/flicker_speed = 1.5
 shader_parameter/screen_size = Vector2(1920, 1080)

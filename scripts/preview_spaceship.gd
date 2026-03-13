@@ -414,16 +414,16 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	# Remove blueprint shader after dematerialization completes
 	_launch_tween.tween_callback(_remove_blueprint_shader)
 	
+	# Immediately switch hangar frame to launch mode (cyan -> yellow)
+	_set_hangar_launch_progress(1.0)
+	
 	# Phase 1: Lift up (sprite moves up relative to base)
-	# Also transition hangar frame from cyan to yellow
 	_launch_tween.set_ease(Tween.EASE_OUT)
 	_launch_tween.set_trans(Tween.TRANS_QUAD)
 	var lift_target_y := -lift_amount + current_bob
 	_launch_tween.tween_property(sprite, "position:y", lift_target_y, lift_duration)
 	if label_container:
 		_launch_tween.parallel().tween_property(label_container, "position:y", label_offset_y + lift_target_y, lift_duration)
-	# Transition hangar frame to launch mode (cyan -> yellow)
-	_launch_tween.parallel().tween_method(_set_hangar_launch_progress, 0.0, 1.0, lift_duration)
 	
 	# Phase 2: Accelerate to the left (exponential feel) with afterburner trail
 	var exit_x := -launch_exit_offset
