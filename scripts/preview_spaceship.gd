@@ -240,8 +240,8 @@ func _create_afterburner_trail() -> void:
 	# Create ColorRect for trail
 	_afterburner_trail = ColorRect.new()
 	
-	# Trail height - make it wide and diffuse so exact position is hard to pinpoint
-	var trail_height := 120.0 * preview_scale
+	# Trail height - visible but not overwhelming
+	var trail_height := 140.0 * preview_scale
 	
 	# Store starting position with offset to place trail behind ship (at engines)
 	# Ship faces LEFT, so engines are to the RIGHT (positive X offset)
@@ -250,16 +250,17 @@ func _create_afterburner_trail() -> void:
 	
 	# Position trail centered vertically on ship
 	_afterburner_trail.position = Vector2(_trail_start_x, _trail_start_y - trail_height / 2.0)
-	_afterburner_trail.size = Vector2(50.0, trail_height)  # Start with wide base
+	_afterburner_trail.size = Vector2(60.0, trail_height)  # Start with solid base
 	
-	# Apply neon afterburner shader - use white core with cyan glow
+	# Apply plasma afterburner shader - white core, orange mid, cyan outer
 	var trail_material := ShaderMaterial.new()
 	trail_material.shader = AFTERBURNER_TRAIL_SHADER
-	trail_material.set_shader_parameter("core_color", Color(1.0, 0.98, 0.95, 1.0))  # Warm white core
-	trail_material.set_shader_parameter("glow_color", Color(0.0, 0.8, 1.0, 1.0))    # Bright cyan glow
+	trail_material.set_shader_parameter("core_color", Color(1.0, 1.0, 1.0, 1.0))    # White-hot core
+	trail_material.set_shader_parameter("mid_color", Color(1.0, 0.5, 0.0, 1.0))     # Orange mid layer
+	trail_material.set_shader_parameter("glow_color", Color(0.0, 0.75, 1.0, 1.0))   # Cyan outer glow
 	trail_material.set_shader_parameter("opacity", 1.0)
 	trail_material.set_shader_parameter("direction", -1)  # Moving left
-	trail_material.set_shader_parameter("glow_intensity", 3.5)  # High glow for diffuse look
+	trail_material.set_shader_parameter("glow_intensity", 2.5)
 	trail_material.set_shader_parameter("fade_progress", 0.0)
 	trail_material.set_shader_parameter("pulse_time", 0.0)
 	_afterburner_trail.material = trail_material
@@ -286,7 +287,7 @@ func _update_afterburner_trail() -> void:
 	var current_trail_x := position.x + _trail_offset_x
 	
 	# Calculate trail width from distance traveled (ship moving left)
-	var trail_width := maxf(50.0, absf(_trail_start_x - current_trail_x))  # Wide minimum base
+	var trail_width := maxf(60.0, absf(_trail_start_x - current_trail_x) * 1.2)  # Solid minimum, extends well
 	
 	# Update trail size
 	_afterburner_trail.size.x = trail_width
