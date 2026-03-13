@@ -55,7 +55,7 @@ const ROLE_THEME_COLORS: Dictionary = {
 	"Bot": Color(0.2, 0.8, 1.0, 1.0),           # White for bots
 	"Design": Color(0.95, 0.3, 0.5, 1.0),       # Pink/Magenta
 	"Engineering": Color(0.2, 0.8, 1.0, 1.0),   # Cyan
-	"Creative": Color(1.0, 0.6, 0.1, 1.0),      # Orange
+	"Art": Color(1.0, 0.6, 0.1, 1.0),           # Orange
 	"Production": Color(0.4, 1.0, 0.4, 1.0),    # Green
 }
 const DEFAULT_THEME_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)  # White fallback
@@ -64,7 +64,7 @@ const DEFAULT_THEME_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 const ROLE_EMBLEMS: Dictionary = {
 	"Design": "res://assets/images/emblems/design.png",
 	"Engineering": "res://assets/images/emblems/engineering.png",
-	"Creative": "res://assets/images/emblems/creative.png",
+	"Art": "res://assets/images/emblems/art.png",
 	"Production": "res://assets/images/emblems/production.png",
 }
 

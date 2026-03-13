@@ -25,7 +25,7 @@ const DEFAULT_ROLE := ""
 const ROLE_EMBLEMS: Dictionary = {
 	"Design": "res://assets/images/emblems/design.png",
 	"Engineering": "res://assets/images/emblems/engineering.png",
-	"Creative": "res://assets/images/emblems/creative.png",
+	"Art": "res://assets/images/emblems/art.png",
 	"Production": "res://assets/images/emblems/production.png",
 }
 

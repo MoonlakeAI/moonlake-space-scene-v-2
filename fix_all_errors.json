@@ -1,10 +1,10 @@
 {
-	"errors": [],
-	"warnings": [
+	"errors": [
 		{
-			"message": "GDScript::reload: The local variable \"elapsed\" is declared but never used in the block. If this is intended, prefix it with an underscore: \"_elapsed\".",
+			"message": "preview_spaceship.gd:432 @ _on_role_changed(): Resource file not found: res://assets/images/emblems/creative.png (expected type: unknown)",
 			"source_file": "res://scripts/preview_spaceship.gd",
-			"source_line": 373
+			"source_line": 432
 		}
-	]
+	],
+	"warnings": []
 }
