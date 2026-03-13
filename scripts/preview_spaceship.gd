@@ -228,6 +228,28 @@ func _remove_blueprint_shader() -> void:
 		sprite.material = _original_material
 
 
+## Called by ConsolePanel when preview button is hovered
+var _preview_tween: Tween = null
+
+func set_preview_mode(enabled: bool) -> void:
+	if _state != State.IDLE or not _blueprint_material:
+		return
+	
+	if _preview_tween and _preview_tween.is_valid():
+		_preview_tween.kill()
+	
+	_preview_tween = create_tween()
+	_preview_tween.set_ease(Tween.EASE_OUT)
+	_preview_tween.set_trans(Tween.TRANS_CUBIC)
+	
+	if enabled:
+		# Dematerialize effect (chunk_threshold 0 -> 1) to reveal real ship
+		_preview_tween.tween_method(_set_chunk_threshold, 0.0, 1.0, 0.5)
+	else:
+		# Materialize effect (chunk_threshold 1 -> 0) to show hologram
+		_preview_tween.tween_method(_set_chunk_threshold, 1.0, 0.0, 0.5)
+
+
 # ============================================================================
 # AFTERBURNER TRAIL (Fires during launch acceleration)
 # ============================================================================
@@ -428,10 +450,14 @@ func _on_role_changed(index: int) -> void:
 	if role_emblem and _role_input:
 		var role_text := _role_input.get_item_text(index)
 		var emblem_path = ROLE_EMBLEMS.get(role_text, "")
+		print("[PreviewSpaceship] Role changed to: '%s' -> Emblem path: '%s'" % [role_text, emblem_path])
 		if emblem_path != "":
-			role_emblem.texture = load(emblem_path)
+			var loaded_texture = load(emblem_path)
+			print("[PreviewSpaceship] Loaded texture: %s" % loaded_texture)
+			role_emblem.texture = loaded_texture
 			role_emblem.visible = true
 		else:
+			print("[PreviewSpaceship] No emblem path found for role: '%s'" % role_text)
 			role_emblem.texture = null
 			role_emblem.visible = false
 

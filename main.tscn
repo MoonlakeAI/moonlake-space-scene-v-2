@@ -341,7 +341,27 @@ grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("4_console")
 
-[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel" unique_id=1155248470]
+[node name="ButtonContainer" type="HBoxContainer" parent="ConsoleUI/ConsolePanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="PreviewButton" type="Button" parent="ConsoleUI/ConsolePanel/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.3, 0.7, 0.8, 1)
+theme_override_colors/font_pressed_color = Color(0.5, 0.85, 0.95, 1)
+theme_override_colors/font_hover_color = Color(0.4, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
+text = "PREVIEW"
+
+[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel/ButtonContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3

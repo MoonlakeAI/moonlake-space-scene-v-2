@@ -7,8 +7,9 @@ extends PanelContainer
 @onready var role_input: OptionButton = $"../InputsPanel/MarginContainer/InputsContainer/RoleColumn/RoleInput"
 
 # Predefined roles for crew members
-const ROLES: Array[String] = ["Design", "Engineering", "Creative", "Production"]
-@onready var launch_button: Button = $LaunchButton
+const ROLES: Array[String] = ["Design", "Engineering", "Art", "Production"]
+@onready var launch_button: Button = $ButtonContainer/LaunchButton
+@onready var preview_button: Button = $ButtonContainer/PreviewButton
 
 # Reference to spaceship generator panel (sibling node)
 @onready var generator_panel = $"../GeneratorPanel"
@@ -18,6 +19,10 @@ var _preview_spaceship: Node2D = null
 
 func _ready() -> void:
 	launch_button.pressed.connect(_on_launch_pressed)
+	
+	# Connect preview button hover signals
+	preview_button.mouse_entered.connect(_on_preview_hover_start)
+	preview_button.mouse_exited.connect(_on_preview_hover_end)
 	
 	# Allow Enter key to launch from name input
 	name_input.text_submitted.connect(_on_text_submitted)
@@ -155,3 +160,15 @@ func _play_launch_effect() -> void:
 	var tween = create_tween()
 	launch_button.modulate = Color(0.5, 1.0, 1.0, 1.0)
 	tween.tween_property(launch_button, "modulate", Color.WHITE, 0.3)
+
+
+func _on_preview_hover_start() -> void:
+	# Reduce holographic effect to reveal the original ship
+	if _preview_spaceship and _preview_spaceship.has_method("set_preview_mode"):
+		_preview_spaceship.set_preview_mode(true)
+
+
+func _on_preview_hover_end() -> void:
+	# Restore holographic effect
+	if _preview_spaceship and _preview_spaceship.has_method("set_preview_mode"):
+		_preview_spaceship.set_preview_mode(false)

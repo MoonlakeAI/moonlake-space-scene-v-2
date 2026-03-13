@@ -820,10 +820,14 @@ func update_labels() -> void:
 	# Set role emblem texture based on role
 	if role_emblem:
 		var emblem_path = ROLE_EMBLEMS.get(role, "")
+		print("[Spaceship] Role: '%s' -> Emblem path: '%s'" % [role, emblem_path])
 		if emblem_path != "":
-			role_emblem.texture = load(emblem_path)
+			var loaded_texture = load(emblem_path)
+			print("[Spaceship] Loaded texture: %s" % loaded_texture)
+			role_emblem.texture = loaded_texture
 			role_emblem.visible = true
 		else:
+			print("[Spaceship] No emblem path found for role: '%s'" % role)
 			role_emblem.visible = false
 	
 	# Keep labels upright and properly positioned when ship is flipped
