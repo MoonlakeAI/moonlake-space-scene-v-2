@@ -12,7 +12,7 @@ float hash(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
 
-// Multiple flicker patterns that feel asynchronous
+// Multiple flicker patterns - full fade in/out
 float get_flicker(float time, vec2 id, float base_speed) {
     float r = hash(id);
     float r2 = hash(id + 500.0);
@@ -30,15 +30,17 @@ float get_flicker(float time, vec2 id, float base_speed) {
     // Speed variation per star
     float speed_mult = 0.4 + r3 * 0.8; // 0.4 to 1.2x speed
     
-    // Combine multiple sine waves for organic feel
+    // Main wave for fade in/out
     float wave1 = sin(time * base_speed * speed_mult + group_phase + star_phase);
-    float wave2 = sin(time * base_speed * speed_mult * 0.7 + star_phase * 1.3) * 0.5;
-    float wave3 = sin(time * base_speed * speed_mult * 0.3 + group_phase * 2.0) * 0.3;
     
-    float combined = (wave1 + wave2 + wave3) / 1.8;
+    // Secondary wave for variation
+    float wave2 = sin(time * base_speed * speed_mult * 0.6 + star_phase * 1.5) * 0.3;
     
-    // Map to 0.3-1.0 range (never fully off)
-    return combined * 0.35 + 0.65;
+    // Combine and map to 0-1 range (full fade out to full brightness)
+    float combined = (wave1 + wave2) * 0.5 + 0.5;
+    
+    // Apply power curve for sharper on/off feel
+    return pow(clamp(combined, 0.0, 1.0), 1.5);
 }
 
 void fragment() {
@@ -127,6 +129,5 @@ void fragment() {
     }
     
     // Black overlay with stars on top
-    // overlay_opacity controls how much black covers the background image
     COLOR = vec4(col, overlay_opacity * opacity);
 }
