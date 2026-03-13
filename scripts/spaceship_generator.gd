@@ -10,7 +10,7 @@ signal ship_selected(texture: Texture2D)
 var _generated_ships: Array[Dictionary] = []
 
 const SAVE_DIR := "user://generated_spaceships/"
-const SYSTEM_PROMPT := "facing towards right, maintain the aspect ratio of the reference images,"
+const SYSTEM_PROMPT := "turn this creatively into a Side view of a sci-fi mining spaceship,  elongated horizontal shape pointing right, single object on clean transparent background, facing towards right, maintain the aspect ratio of 4:3, resolution 1200x900,"
 ##const DEFAULT_PROMPT := "Side view of a sci-fi mining spaceship, dark gray metallic hull with yellow warning stripes, industrial mechanical design with drilling equipment and ore containers, bulky angular hull, elongated horizontal shape pointing right, single object on clean white background, heavy mining vessel"
 const DEFAULT_PROMPT := ""
 
@@ -375,7 +375,7 @@ func _start_generation(prompt: String) -> void:
 		selected_refs.append(REFERENCE_IMAGES[_selected_reference_index])
 	
 	var body := JSON.stringify({
-		"prompt": prompt,
+		"prompt": _current_prompt,
 		"aspect_ratio": "16:9",
 		"reference_images": selected_refs,
 		"remove_background": true
