@@ -341,13 +341,13 @@ grow_horizontal = 2
 grow_vertical = 0
 script = ExtResource("4_console")
 
-[node name="ButtonContainer" type="HBoxContainer" parent="ConsoleUI/ConsolePanel"]
+[node name="ButtonContainer" type="HBoxContainer" parent="ConsoleUI/ConsolePanel" unique_id=286054726]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="PreviewButton" type="Button" parent="ConsoleUI/ConsolePanel/ButtonContainer"]
+[node name="PreviewButton" type="Button" parent="ConsoleUI/ConsolePanel/ButtonContainer" unique_id=14345624]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -361,7 +361,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_1")
 text = "PREVIEW"
 
-[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel/ButtonContainer"]
+[node name="LaunchButton" type="Button" parent="ConsoleUI/ConsolePanel/ButtonContainer" unique_id=1831190520]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
