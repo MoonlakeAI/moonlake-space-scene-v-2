@@ -450,13 +450,7 @@ theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 13
 text = "[ BLUEPRINT ]"
 
-[node name="ReferenceScroll" type="ScrollContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=486732993]
-custom_minimum_size = Vector2(0, 200)
-layout_mode = 2
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 3
-
-[node name="ReferenceContainer" type="GridContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer/ReferenceScroll" unique_id=1666803162]
+[node name="ReferenceContainer" type="GridContainer" parent="ConsoleUI/GeneratorPanel/MarginContainer/VBoxContainer" unique_id=1666803162]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/h_separation = 6

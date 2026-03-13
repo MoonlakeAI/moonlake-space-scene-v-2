@@ -31,7 +31,7 @@ const REFERENCE_IMAGES := [
 @onready var generate_button: Button = $MarginContainer/VBoxContainer/GenerateButton
 @onready var prompt_input: TextEdit = $MarginContainer/VBoxContainer/PromptInput
 @onready var progress_bar: HBoxContainer = $MarginContainer/VBoxContainer/ProgressBar
-@onready var reference_container: GridContainer = $MarginContainer/VBoxContainer/ReferenceScroll/ReferenceContainer
+@onready var reference_container: GridContainer = $MarginContainer/VBoxContainer/ReferenceContainer
 
 # Progress bar colors
 const COLOR_FILLED := Color(0.3, 0.7, 0.8, 1.0)
@@ -53,7 +53,9 @@ var _selected_reference_index: int = 0
 var _preview_spaceship: Node = null
 var _reference_download_queue: Array = []
 var _reference_textures: Array[Texture2D] = []
+var _free_form_panel: PanelContainer = null
 
+const FREE_FORM_INDEX := -1
 const THUMB_SIZE := Vector2(96, 64)
 const SELECTED_COLOR := Color(0, 0.8, 1, 1)
 const UNSELECTED_COLOR := Color(0.5, 0.6, 0.7, 0.6)
@@ -169,6 +171,10 @@ func _create_reference_buttons() -> void:
 		child.queue_free()
 	_reference_buttons.clear()
 	_reference_textures.clear()
+	_free_form_panel = null
+	
+	# Create "Free Form" button first
+	_create_free_form_button()
 	
 	# Create a button for each reference image
 	for i in range(REFERENCE_IMAGES.size()):
@@ -207,8 +213,39 @@ func _create_reference_buttons() -> void:
 		var index := i
 		btn.pressed.connect(func(): _on_reference_selected(index))
 	
-	# Select first by default
+	# Select first reference by default (not free form)
 	_update_reference_selection(0)
+
+
+func _create_free_form_button() -> void:
+	# Create a special "Free Form" button with a label instead of texture
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = THUMB_SIZE + Vector2(4, 4)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.1, 0.15, 0.9)
+	style.border_color = UNSELECTED_COLOR
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(3)
+	panel.add_theme_stylebox_override("panel", style)
+	
+	# Create a button with centered label
+	var btn := Button.new()
+	btn.text = "FREE\nFORM"
+	btn.flat = true
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	btn.add_theme_color_override("font_color", Color(0.6, 0.8, 0.9, 1.0))
+	btn.add_theme_color_override("font_hover_color", Color(0.8, 1.0, 1.0, 1.0))
+	btn.add_theme_font_size_override("font_size", 12)
+	panel.add_child(btn)
+	
+	reference_container.add_child(panel)
+	_free_form_panel = panel
+	
+	# Connect click handler
+	btn.pressed.connect(func(): _on_reference_selected(FREE_FORM_INDEX))
 
 
 func _start_loading_references() -> void:
@@ -264,7 +301,11 @@ func _on_reference_image_loaded(result: int, code: int, body: PackedByteArray, i
 func _on_reference_selected(index: int) -> void:
 	_update_reference_selection(index)
 	# Update preview with selected reference texture
-	if index >= 0 and index < _reference_textures.size():
+	if index == FREE_FORM_INDEX:
+		# Free form mode - clear reference texture
+		_current_reference_texture = null
+		_generated_texture = null
+	elif index >= 0 and index < _reference_textures.size():
 		_current_reference_texture = _reference_textures[index]
 		if _current_reference_texture:
 			# Clear generated texture so preview shows reference
@@ -275,7 +316,21 @@ func _on_reference_selected(index: int) -> void:
 func _update_reference_selection(index: int) -> void:
 	_selected_reference_index = index
 	
-	# Update visual state of all buttons
+	# Update free form panel visual state
+	if _free_form_panel:
+		var ff_style := _free_form_panel.get_theme_stylebox("panel") as StyleBoxFlat
+		if ff_style:
+			var new_ff_style := ff_style.duplicate() as StyleBoxFlat
+			if index == FREE_FORM_INDEX:
+				new_ff_style.border_color = SELECTED_COLOR
+				new_ff_style.shadow_color = Color(0, 0.6, 0.8, 0.5)
+				new_ff_style.shadow_size = 4
+			else:
+				new_ff_style.border_color = UNSELECTED_COLOR
+				new_ff_style.shadow_size = 0
+			_free_form_panel.add_theme_stylebox_override("panel", new_ff_style)
+	
+	# Update visual state of all reference buttons
 	for i in range(_reference_buttons.size()):
 		var btn := _reference_buttons[i]
 		var panel := btn.get_parent().get_parent() as PanelContainer
