@@ -1,18 +1,17 @@
 [gd_scene format=3 uid="uid://ce0i3w1158bj6"]
 
 [ext_resource type="Script" uid="uid://sfldqnae5dab" path="res://scripts/space_background.gd" id="1_script"]
-[ext_resource type="Shader" uid="uid://bljc2nm0esmmp" path="res://shaders/space_background.gdshader" id="2_shader"]
+[ext_resource type="Shader" uid="uid://cvrjfd72m780b" path="res://shaders/starfield.gdshader" id="2_shader"]
 [ext_resource type="Texture2D" uid="uid://kde6bc5upb6g" path="res://assets/images/galaxy.png" id="3_galaxy"]
 [ext_resource type="Texture2D" uid="uid://3es75846lcri" path="res://assets/images/space_background.png" id="4_space_bg"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_space"]
 shader = ExtResource("2_shader")
-shader_parameter/background_color = Color(0, 0, 0, 0)
-shader_parameter/star_density = 0.006
-shader_parameter/star_brightness = 0.8
-shader_parameter/star_flicker_speed = 5.0
-shader_parameter/star_min_size = 0.002
-shader_parameter/star_max_size = 0.006
+shader_parameter/opacity = 1.0
+shader_parameter/overlay_opacity = 0.5
+shader_parameter/star_density = 0.08
+shader_parameter/flicker_speed = 1.5
+shader_parameter/screen_size = Vector2(1920, 1080)
 
 [node name="SpaceBackground" type="CanvasLayer" unique_id=1892712163]
 layer = -100
