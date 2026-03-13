@@ -1,0 +1,10 @@
+{
+	"errors": [],
+	"warnings": [
+		{
+			"message": "GDScript::reload: The local variable \"elapsed\" is declared but never used in the block. If this is intended, prefix it with an underscore: \"_elapsed\".",
+			"source_file": "res://scripts/preview_spaceship.gd",
+			"source_line": 373
+		}
+	]
+}

@@ -60,6 +60,7 @@ var _name_input: LineEdit
 var _role_input: OptionButton
 var _loaded_textures: Array[Texture2D] = []
 var _hangar_frame_material: ShaderMaterial  ## Reference to hangar frame shader material
+var _hangar_frame: CanvasItem  ## Reference to hangar frame node for shake effect
 var _blueprint_material: ShaderMaterial  ## Blueprint hologram shader for docked ship
 var _original_material: Material  ## Store original material to restore on launch
 var _current_index: int = 0
@@ -84,6 +85,14 @@ var _trail_start_y: float = 0.0
 
 # Debug: perpetual launch mode
 var _perpetual_launch: bool = false
+
+# Camera shake parameters
+const SHAKE_INTENSITY: float = 1.0  ## Max pixels of shake offset (very subtle)
+const SHAKE_FADE_DURATION: float = 0.5  ## Duration of shake fade out
+const SHAKE_RAMP_DURATION: float = 1.5  ## Duration of shake ramp up
+var _shake_active: bool = false
+var _shake_current_intensity: float = 0.0
+var _shake_tween: Tween = null
 
 # Ship transition effect variables
 var _transition_tween: Tween = null
@@ -127,6 +136,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# Apply continuous shake effect when active (more vertical than horizontal)
+	if _shake_active and _hangar_frame and _shake_current_intensity > 0:
+		var offset := Vector2(
+			randf_range(-_shake_current_intensity * 0.3, _shake_current_intensity * 0.3),
+			randf_range(-_shake_current_intensity, _shake_current_intensity)
+		)
+		_hangar_frame.position = offset
+	
 	# Only bob during IDLE state
 	if _state != State.IDLE:
 		return
@@ -285,7 +302,10 @@ func _update_afterburner_trail() -> void:
 
 
 func _fade_out_afterburner_trail() -> void:
-	"""Fade out and remove the afterburner trail."""
+	"""Fade out and remove the afterburner trail, and stop shake."""
+	# Stop the hangar shake as the flame fades
+	_stop_shake()
+	
 	if _afterburner_trail and is_instance_valid(_afterburner_trail):
 		var trail_tween := create_tween()
 		trail_tween.tween_method(_set_afterburner_opacity, 1.0, 0.0, 0.5).set_ease(Tween.EASE_OUT)
@@ -344,6 +364,7 @@ func _find_hangar_frame() -> void:
 	if hangar_overlay:
 		var hangar_frame := hangar_overlay.find_child("HangarFrame", true, false)
 		if hangar_frame and hangar_frame is CanvasItem:
+			_hangar_frame = hangar_frame
 			_hangar_frame_material = hangar_frame.material as ShaderMaterial
 
 
@@ -351,6 +372,42 @@ func _set_hangar_launch_progress(progress: float) -> void:
 	## Set the launch_progress shader parameter on the hangar frame
 	if _hangar_frame_material:
 		_hangar_frame_material.set_shader_parameter("launch_progress", progress)
+
+
+func _start_shake(intensity: float = SHAKE_INTENSITY) -> void:
+	## Start continuous shake effect on the hangar frame, ramping up from 0
+	if not _hangar_frame:
+		return
+	
+	# Kill any existing fade tween
+	if _shake_tween and _shake_tween.is_valid():
+		_shake_tween.kill()
+	
+	_shake_active = true
+	_shake_current_intensity = 0.0
+	
+	# Ramp up intensity from 0 to max
+	_shake_tween = create_tween()
+	_shake_tween.tween_property(self, "_shake_current_intensity", intensity, SHAKE_RAMP_DURATION).set_ease(Tween.EASE_IN)
+
+
+func _stop_shake() -> void:
+	## Fade out and stop the shake effect
+	if not _shake_active:
+		return
+	
+	# Kill any existing tween
+	if _shake_tween and _shake_tween.is_valid():
+		_shake_tween.kill()
+	
+	# Fade out the intensity
+	_shake_tween = create_tween()
+	_shake_tween.tween_property(self, "_shake_current_intensity", 0.0, SHAKE_FADE_DURATION).set_ease(Tween.EASE_OUT)
+	_shake_tween.tween_callback(func():
+		_shake_active = false
+		if _hangar_frame:
+			_hangar_frame.position = Vector2.ZERO
+	)
 
 
 func _on_name_changed(new_text: String) -> void:
@@ -414,8 +471,9 @@ func launch(ship_name: String, ship_role: String, texture: Texture2D = null) -> 
 	# Remove blueprint shader after dematerialization completes
 	_launch_tween.tween_callback(_remove_blueprint_shader)
 	
-	# Immediately switch hangar frame to launch mode (cyan -> yellow)
+	# Immediately switch hangar frame to launch mode (cyan -> yellow) and start shake
 	_set_hangar_launch_progress(1.0)
+	_start_shake()
 	
 	# Phase 1: Lift up (sprite moves up relative to base)
 	_launch_tween.set_ease(Tween.EASE_OUT)
