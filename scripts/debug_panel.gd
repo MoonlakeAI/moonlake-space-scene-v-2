@@ -641,7 +641,7 @@ func _create_ship_registry_table() -> void:
 	
 	# Grid container for ship data
 	_ship_table_grid = GridContainer.new()
-	_ship_table_grid.columns = 7  # ID, Name, Lane, Row, Dir, Pos X, Action
+	_ship_table_grid.columns = 8  # ID, Name, Lane, Row, Dir, Pos X, Action, Delete
 	_ship_table_grid.add_theme_constant_override("h_separation", 6)
 	_ship_table_grid.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_ship_table_grid)
@@ -665,8 +665,8 @@ func _create_ship_registry_table() -> void:
 
 func _add_table_header() -> void:
 	"""Add header row to the ship table grid."""
-	var headers = ["ID", "Name", "Lane", "Row", "Dir", "X", "Act"]
-	var widths = [25, 80, 30, 28, 25, 45, 35]
+	var headers = ["ID", "Name", "Lane", "Row", "Dir", "X", "Act", "Del"]
+	var widths = [25, 80, 30, 28, 25, 45, 35, 30]
 	
 	for i in range(headers.size()):
 		var label = Label.new()
@@ -711,8 +711,8 @@ func _update_ship_registry_table() -> void:
 		var counts = _spaceship_traffic.get_lane_counts()
 		summary_label.text = "Lane 1: %d | Lane 2: %d | Lane 3: %d | Total: %d" % [counts[0], counts[1], counts[2], registry.size()]
 	
-	# Clear existing rows (keep header - first 7 children)
-	while _ship_table_grid.get_child_count() > 7:
+	# Clear existing rows (keep header - first 8 children)
+	while _ship_table_grid.get_child_count() > 8:
 		var child = _ship_table_grid.get_child(7)
 		_ship_table_grid.remove_child(child)
 		child.queue_free()
@@ -793,6 +793,16 @@ func _update_ship_registry_table() -> void:
 		action_btn.custom_minimum_size = Vector2(35, 18)
 		action_btn.pressed.connect(_on_trigger_activity.bind(ship_id))
 		_ship_table_grid.add_child(action_btn)
+		
+		# Delete button
+		var delete_btn = Button.new()
+		delete_btn.text = "X"
+		delete_btn.add_theme_font_size_override("font_size", 9)
+		delete_btn.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1.0))
+		delete_btn.add_theme_color_override("font_hover_color", Color(1.0, 0.6, 0.6, 1.0))
+		delete_btn.custom_minimum_size = Vector2(30, 18)
+		delete_btn.pressed.connect(_on_delete_ship.bind(ship_id))
+		_ship_table_grid.add_child(delete_btn)
 
 
 func _sort_ships_by_lane_desc(a: Dictionary, b: Dictionary) -> bool:
@@ -825,6 +835,15 @@ func _on_trigger_activity(ship_id: int) -> void:
 			if ship and is_instance_valid(ship):
 				_trigger_activity_on_ship(ship)
 			return
+
+
+func _on_delete_ship(ship_id: int) -> void:
+	"""Delete a specific ship from the registry."""
+	if not _spaceship_traffic:
+		return
+	
+	if _spaceship_traffic.has_method("remove_ship_by_id"):
+		_spaceship_traffic.remove_ship_by_id(ship_id)
 
 
 func _on_trigger_all_activities() -> void:

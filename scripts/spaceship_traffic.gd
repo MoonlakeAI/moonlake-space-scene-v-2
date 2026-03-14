@@ -486,6 +486,20 @@ func _unregister_ship(ship_id: int) -> void:
 			return
 
 
+func remove_ship_by_id(ship_id: int) -> bool:
+	"""Remove a specific ship by its ID. Returns true if ship was found and removed."""
+	for entry in ship_registry:
+		if entry["id"] == ship_id:
+			var ship = entry["ship_ref"] as Spaceship
+			if is_instance_valid(ship):
+				ship.queue_free()
+			_unregister_ship(ship_id)
+			print("[SpaceshipTraffic] Removed ship ID %d" % ship_id)
+			return true
+	push_warning("[SpaceshipTraffic] Ship ID %d not found in registry" % ship_id)
+	return false
+
+
 func get_ship_registry() -> Array[Dictionary]:
 	"""Get a copy of the current ship registry for observation"""
 	var result: Array[Dictionary] = []
